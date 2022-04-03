@@ -54,13 +54,13 @@ public class AssertTracker
 
                 AssertTracker tracker = new AssertTracker(classFile.toFile());
 
-                tracker.traceAsserts();
-                // tracker.instrumentCode();
+//                tracker.traceAsserts();
+                tracker.instrumentCode();
             }
 
         } else if (file.isFile()) {
             System.out.println(MessageFormat.format("File: {0}", args[0]));
-            new AssertTracker(file).traceAsserts();
+//            new AssertTracker(file).traceAsserts();
             new AssertTracker(file).instrumentCode();
         }
 
