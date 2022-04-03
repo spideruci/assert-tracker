@@ -24,6 +24,7 @@ public class AssertVisitor extends MethodVisitor {
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
 
         Boolean isAssert = name.toLowerCase().startsWith("assert");
+
         if (isAssert) {
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
@@ -85,10 +86,10 @@ public class AssertVisitor extends MethodVisitor {
         this.mv.visitLdcInsn(str);
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
-//        27: aload_0
-//        28: invokevirtual #31                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
-//        31: invokevirtual #35                 // Method java/lang/Class.getName:()Ljava/lang/String;
-//        .append(this.getClass().getName())
+        //        27: aload_0
+        //        28: invokevirtual #31                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+        //        31: invokevirtual #35                 // Method java/lang/Class.getName:()Ljava/lang/String;
+        //        .append(this.getClass().getName())
         this.mv.visitInsn(42);
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
