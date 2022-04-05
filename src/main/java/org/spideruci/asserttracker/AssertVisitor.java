@@ -85,12 +85,24 @@ public class AssertVisitor extends MethodVisitor {
         }
 
     }
+    public Boolean isAssertionStatement(String statementName) {
+        String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue"};
+        for(String s:assertionNames){
+            if (s.equalsIgnoreCase(statementName)){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
 
 
-        Boolean isAssert = name.toLowerCase().startsWith("assert");
+
+
+        Boolean isAssert = isAssertionStatement(name);
 
         if (isAssert) {
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
