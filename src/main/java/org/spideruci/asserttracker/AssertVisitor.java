@@ -11,26 +11,31 @@ public class AssertVisitor extends MethodVisitor {
 
     final public String methodName;
     public Boolean isTestAnnotationPresent;
+    boolean isTestClass;
+    String testClassName;
 
-    public AssertVisitor(int api, String methodName, MethodVisitor methodWriter) {
+    public AssertVisitor(int api, String methodName, MethodVisitor methodWriter, boolean isTestClass, String testClassName) {
         super(api, methodWriter);
         this.methodName = methodName;
         this.isTestAnnotationPresent= false;
+        this.isTestClass = isTestClass;
+        this.testClassName = testClassName;
+
     }
 
-    public AssertVisitor(int api, String methodName) {
+    public AssertVisitor(int api, String methodName,boolean isTestClass, String testClassName) {
         super(api);
         this.methodName = methodName;
         this.isTestAnnotationPresent= false;
+        this.isTestClass = isTestClass;
+        this.testClassName = testClassName;
     }
 
     @Override
 
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 
-        // 1. check method for annotation @ImportantLog
-
-        // 2. if annotation present, then get important method param indexes
+        // 1. if annotation present, then set the flag to true
         //@org.junit.jupiter.api.Test()
         if ("Lorg/junit/jupiter/api/Test;".equals(desc)){
             isTestAnnotationPresent = true;
@@ -42,18 +47,39 @@ public class AssertVisitor extends MethodVisitor {
 
     public void visitCode() {
 
-        // 3. if annotation present, add logging to beginning of the method
+        // 1. if we see @Test annotation, then instrument some code
 
         if (this.isTestAnnotationPresent) {
-
+            //System.err.print("recognize an @Test Annotation");
             this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
             this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
             this.mv.visitInsn(Opcodes.DUP);
             this.mv.visitLdcInsn("recognize an @Test Annotation");
             this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+
+            //System.err.println("Start executing outer test method: XXXXXXXX")
+            this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
+            this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
+            this.mv.visitInsn(Opcodes.DUP);
+            this.mv.visitLdcInsn("Start executing outer test method: ");
+            this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+
+            // .append(testmethodname)
+            this.mv.visitLdcInsn(this.methodName);
+            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+
+//            // .append(" ")
+//            this.mv.visitLdcInsn(" test class name: ");
+//            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+//
+//            // .append(testClassName)
+//            this.mv.visitLdcInsn(this.testClassName);
+//            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
-
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
 
         }
@@ -71,7 +97,6 @@ public class AssertVisitor extends MethodVisitor {
             System.out.println(message);
             insertPrintingProbe(message);
         }
-//        super.visitAnnotation("@org.junit.jupiter.api.Test()",True);
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
@@ -131,14 +156,13 @@ public class AssertVisitor extends MethodVisitor {
         this.mv.visitLdcInsn(str);
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
-//        //        27: aload_0
-//        //        28: invokevirtual #31                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
-//        //        31: invokevirtual #35                 // Method java/lang/Class.getName:()Ljava/lang/String;
-//        //        .append(this.getClass().getName())
-//        this.mv.visitInsn(42);
-//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
-//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
-//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+        // .append(" ")
+        this.mv.visitLdcInsn(" testClassName: ");
+        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+        // .append(testClassName)
+        this.mv.visitLdcInsn(this.testClassName);
+        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
         // .toString()
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
