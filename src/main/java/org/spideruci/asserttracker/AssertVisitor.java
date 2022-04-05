@@ -26,7 +26,7 @@ public class AssertVisitor extends MethodVisitor {
         Boolean isAssert = name.toLowerCase().startsWith("assert");
 
         if (isAssert) {
-            String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name;
+            String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
             insertPrintingProbe(message);
         }
@@ -45,8 +45,8 @@ public class AssertVisitor extends MethodVisitor {
             return;
         }
 
-        // System.out
-        this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        // System.err
+        this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
 
         // 22: new           #51                 // class java/lang/StringBuilder
         // 25: dup
@@ -85,6 +85,15 @@ public class AssertVisitor extends MethodVisitor {
         // .append(`str`)
         this.mv.visitLdcInsn(str);
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+//        //        27: aload_0
+//        //        28: invokevirtual #31                 // Method java/lang/Object.getClass:()Ljava/lang/Class;
+//        //        31: invokevirtual #35                 // Method java/lang/Class.getName:()Ljava/lang/String;
+//        //        .append(this.getClass().getName())
+//        this.mv.visitInsn(42);
+//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
+//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
+//        this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
         // .toString()
         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);

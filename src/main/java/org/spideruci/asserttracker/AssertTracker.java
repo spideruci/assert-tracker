@@ -28,8 +28,9 @@ public class AssertTracker
             return;
         }
 
-        Path path = Path.of(args[0]);
-        File file = path.toFile();
+        File file = new File(args[0]);
+//        Path path = Path.of(args[0]);
+//        File file = path.toFile();
 
         if (!file.exists()) {
             final String errorMessage = MessageFormat.format("file does not exist: {0}", file.getName());
@@ -54,13 +55,13 @@ public class AssertTracker
 
                 AssertTracker tracker = new AssertTracker(classFile.toFile());
 
-                tracker.traceAsserts();
-                // tracker.instrumentCode();
+//                tracker.traceAsserts();
+                 tracker.instrumentCode();
             }
 
         } else if (file.isFile()) {
             System.out.println(MessageFormat.format("File: {0}", args[0]));
-            new AssertTracker(file).traceAsserts();
+//            new AssertTracker(file).traceAsserts();
             new AssertTracker(file).instrumentCode();
         }
 
