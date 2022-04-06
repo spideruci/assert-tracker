@@ -90,7 +90,7 @@ public class AssertVisitor extends MethodVisitor {
 
     }
     public Boolean isAssertionStatement(String statementName) {
-        String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue"};
+        String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals"};
         for(String s:assertionNames){
             if (s.equalsIgnoreCase(statementName)){
                 return true;
