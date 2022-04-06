@@ -36,10 +36,14 @@ public class AssertVisitor extends MethodVisitor {
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 
         // 1. if annotation present, then set the flag to true
-        //@org.junit.jupiter.api.Test()
-        if ("Lorg/junit/jupiter/api/Test;".equals(desc)){
+        //@org.junit.jupiter.api.Test() is not enough.
+        //may be @MultilocaleTest?
+        if(desc.endsWith("Test")){
             isTestAnnotationPresent = true;
         }
+//        if ("Lorg/junit/jupiter/api/Test;".equals(desc)){
+//            isTestAnnotationPresent = true;
+//        }
         return super.visitAnnotation(desc, visible);
     }
 

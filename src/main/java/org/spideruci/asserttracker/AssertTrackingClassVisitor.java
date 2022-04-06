@@ -24,12 +24,15 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-        if (name.endsWith("Test")) {
-            this.isTestClass = true;
-            this.testClassName = name.replace("/",".");
-        }else{
-            this.testClassName = "NoneTestClass";
-        }
+//        if (name.endsWith("Test")) {
+//            this.isTestClass = true;
+//            this.testClassName = name.replace("/",".");
+//        }else{
+//            this.testClassName = "NoneTestClass";
+//        }
+        //sometimes they are not names for test classes, but it doesn't matter. Since we only print out assertion info
+        //it indicates that it's a test class name
+        this.testClassName = name.replace("/",".");
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
