@@ -13,6 +13,7 @@ public class AssertVisitor extends MethodVisitor {
     public Boolean isTestAnnotationPresent;
     boolean isTestClass;
     String testClassName;
+    boolean isDisabled;
 
     public AssertVisitor(int api, String methodName, MethodVisitor methodWriter, boolean isTestClass, String testClassName) {
         super(api, methodWriter);
@@ -20,6 +21,7 @@ public class AssertVisitor extends MethodVisitor {
         this.isTestAnnotationPresent= false;
         this.isTestClass = isTestClass;
         this.testClassName = testClassName;
+        this.isDisabled = false;
 
     }
 
@@ -29,21 +31,26 @@ public class AssertVisitor extends MethodVisitor {
         this.isTestAnnotationPresent= false;
         this.isTestClass = isTestClass;
         this.testClassName = testClassName;
+        this.isDisabled = false;
     }
 
     @Override
 
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-
+        //System.out.println("visitAnnotation works");
         // 1. if annotation present, then set the flag to true
         //@org.junit.jupiter.api.Test() is not enough.
         //may be @MultilocaleTest?
-        if(desc.endsWith("Test")){
+
+        if(desc.endsWith("Test;")){
+            //System.out.println("detect @Test");
             isTestAnnotationPresent = true;
         }
-//        if ("Lorg/junit/jupiter/api/Test;".equals(desc)){
-//            isTestAnnotationPresent = true;
-//        }
+        if(desc.endsWith("Disabled;")){
+            //System.out.println("detect @Disabled");
+            this.isDisabled = true;
+        }
+
         return super.visitAnnotation(desc, visible);
     }
 
@@ -54,6 +61,7 @@ public class AssertVisitor extends MethodVisitor {
         // 1. if we see @Test annotation, then instrument some code
 
         if (this.isTestAnnotationPresent) {
+
             //System.err.print("recognize an @Test Annotation");
             this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
             this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
@@ -71,7 +79,10 @@ public class AssertVisitor extends MethodVisitor {
             this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
 
             // .append(testmethodname)
-            this.mv.visitLdcInsn(this.methodName);
+            if (this.isDisabled == true)
+                this.mv.visitLdcInsn("DisabledMethod");
+            else
+                this.mv.visitLdcInsn(this.methodName);
             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
 
 
@@ -102,9 +113,6 @@ public class AssertVisitor extends MethodVisitor {
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-
-
-
 
         Boolean isAssert = isAssertionStatement(name);
 
