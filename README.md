@@ -102,7 +102,8 @@ toEpochMilli⤵
 ```
 
 
-Updated instrumentation:
+### Updated instrumentation:
+#### without mutation
 when running with Pitest, the coverage collecting information would look like this:
 1. for each test method, we know if it is started, finished.
 2. for each test method, we know how assertion statements are executed
@@ -118,6 +119,7 @@ when running with Pitest, the coverage collecting information would look like th
 10:08:15 PM PIT >> INFO : MINION : 10:08:15 PM PIT >> FINE : Gathering coverage for test Description [testClass=org.jsoup.helper.DataUtilTest, name=discardsSpuriousByteOrderMarkWhenNoCharsetSet()]
 ```
 
+#### with mutation
 when running with Pitest, the mutation execution output information would look like this:
 
 a passing test case for one mutation would look like these
