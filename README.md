@@ -100,3 +100,92 @@ toEpochMilli⤵
 	1647911325693//1545818955652791
     System.nanoTime()⤴
 ```
+
+
+### Updated instrumentation:
+#### without mutation
+when running with Pitest, the coverage collecting information would look like this:
+1. for each test method, we know if it is started, finished.
+2. for each test method, we know how assertion statements are executed
+3. for each assertion statement, we know the direct method that holds the statement, and the type of assertion statement
+4. during the coverage collecting period, Pitest also indicates the start of executing a test method
+```
+10:08:14 PM PIT >> INFO : MINION : 10:08:14 PM PIT >> FINE : Gathering coverage for test Description [testClass=org.jsoup.helper.DataUtilTest, name=discardsSpuriousByteOrderMark()]
+10:08:14 PM PIT >> INFO : MINION : recognize an @Test Annotation
+10:08:14 PM PIT >> INFO : MINION : Start executing outer test method: discardsSpuriousByteOrderMark TestClassName: org.jsoup.helper.DataUtilTest
+10:08:15 PM PIT >> INFO : MINION :      1649308095062//360279131500      + Compiled at 1649308030176 start:discardsSpuriousByteOrderMark assertEquals  testClassName: org.jsoup.helper.DataUtilTest
+10:08:15 PM PIT >> INFO : MINION :      1649308095078//360292788400      end:discardsSpuriousByteOrderMark assertEquals testClassName: org.jsoup.helper.DataUtilTest
+10:08:15 PM PIT >> INFO : MINION : No crash or assertion failure! Finish executing outer test method: discardsSpuriousByteOrderMark TestClassName: org.jsoup.helper.DataUtilTest
+10:08:15 PM PIT >> INFO : MINION : 10:08:15 PM PIT >> FINE : Gathering coverage for test Description [testClass=org.jsoup.helper.DataUtilTest, name=discardsSpuriousByteOrderMarkWhenNoCharsetSet()]
+```
+
+#### with mutation
+when running with Pitest, the mutation execution output information would look like this:
+
+a passing test case for one mutation would look like these
+
+passing situation 1:
+
+```
+stderr  : 10:09:33 PM PIT >> FINE : mutating method scanBufferForNewlines
+stderr  : 10:09:33 PM PIT >> FINE : 22 relevant test for scanBufferForNewlines
+stderr  : 10:09:33 PM PIT >> FINE : replaced class with mutant in 63 ms
+stderr  : 10:09:33 PM PIT >> FINE : Running 22 units
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: canEnableAndDisableLineNumberTracking TestClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434445300	 + Compiled at 1649308031724 start:canEnableAndDisableLineNumberTracking assertFalse  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434509300	 end:canEnableAndDisableLineNumberTracking assertFalse testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434555300	 + Compiled at 1649308031724 start:canEnableAndDisableLineNumberTracking assertTrue  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434585600	 end:canEnableAndDisableLineNumberTracking assertTrue testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434607100	 + Compiled at 1649308031724 start:canEnableAndDisableLineNumberTracking assertFalse  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438434622400	 end:canEnableAndDisableLineNumberTracking assertFalse testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : No crash or assertion failure! Finish executing outer test method: canEnableAndDisableLineNumberTracking TestClassName: org.jsoup.parser.CharacterReaderTest
+```
+
+
+passing situation 2:
+
+It's just because some test methods do not contain any assertion statements, they just want to test if it does not lead to crash.
+```
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: testUnconsumeAfterBufferUp TestClassName: org.jsoup.parser.TokeniserStateTest
+stderr  : No crash or assertion failure! Finish executing outer test method: testUnconsumeAfterBufferUp TestClassName: org.jsoup.parser.TokeniserStateTest
+stderr  : recognize an @Test Annotation
+```
+
+a failing test case would look like these. There is no "No crash or assertion failure" before the next recognition of "@Test" annotation
+
+failure situation 1: 
+Here, we notice that there is one assertion statement starting executing, but no end. 
+It indicates that the test method ends because of assertion failure instead of "crash"
+```
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: linenumbersAgreeWithEditor TestClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173255//438470449600	 + Compiled at 1649308031740 start:linenumbersAgreeWithEditor assertEquals  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173255//438470497300	 end:linenumbersAgreeWithEditor assertEquals testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173255//438470517600	 + Compiled at 1649308031740 start:linenumbersAgreeWithEditor assertEquals  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: canTrackNewlines TestClassName: org.jsoup.parser.CharacterReaderTest
+```
+
+failure situation 2:
+Here, each assertion statement is paired with "start" and "end".
+But there is no "No crash or assertion failure" info.
+It indicates there is some kind of "crash" instead of "assertion failure"
+Actaully, if manually check the test method, we see there are four assertion statements within the test method, and only one assertion statements assert successfully, and then there is crash during execution.
+
+```
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: countsColumnsOverBufferWhenNoNewlines TestClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438440342800	 + Compiled at 1649308031740 start:countsColumnsOverBufferWhenNoNewlines assertEquals  testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : 	1649308173223//438440375700	 end:countsColumnsOverBufferWhenNoNewlines assertEquals testClassName: org.jsoup.parser.CharacterReaderTest
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: linenumbersAgreeWithEditor TestClassName: org.jsoup.parser.CharacterReaderTest
+```
+
+failure situation 3:
+the program just meets a crash before executing any assertion statements
+```
+stderr  : recognize an @Test Annotation
+stderr  : Start executing outer test method: testXwikiExpanded TestClassName: org.jsoup.integration.ParseTest
+```
