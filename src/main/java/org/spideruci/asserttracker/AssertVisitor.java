@@ -6,18 +6,27 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class AssertVisitor extends MethodVisitor {
+import org.objectweb.asm.commons.AdviceAdapter;
+
+public class AssertVisitor extends AdviceAdapter {
 
     final public String methodName;
 
-    public AssertVisitor(int api, String methodName, MethodVisitor methodWriter) {
-        super(api, methodWriter);
-        this.methodName = methodName;
+    public AssertVisitor(int api, MethodVisitor methodVisitor, int access, String name, String descriptor) {
+        super(api, methodVisitor, access, name, descriptor);
+        methodName = name;
     }
 
-    public AssertVisitor(int api, String methodName) {
-        super(api);
-        this.methodName = methodName;
+    @Override
+    protected void onMethodEnter() {
+        System.out.println("\n");
+        super.onMethodEnter();
+    }
+
+    @Override
+    protected void onMethodExit(int opcode) {
+        insertPrintingProbe("athrow out of " + this.methodName + "!");
+        super.onMethodExit(opcode);
     }
 
     @Override

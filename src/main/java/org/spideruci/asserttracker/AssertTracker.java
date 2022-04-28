@@ -93,12 +93,12 @@ public class AssertTracker
     } 
 
     public void traceAsserts() {
-        classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9), 0);
+        classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9), ClassReader.EXPAND_FRAMES);
     }
 
     public byte[] fetchIntrumentedCode() {
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer), 0);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer), ClassReader.EXPAND_FRAMES);
         return writer.toByteArray();
     }
 
