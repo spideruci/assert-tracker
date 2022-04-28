@@ -34,7 +34,7 @@ public class AssertVisitor extends AdviceAdapter {
 
     @Override
     protected void onMethodExit(int opcode) {
-        insertPrintingProbe("athrow out of " + this.methodName + "!");
+        System.out.println("\n");
         super.onMethodExit(opcode);
     }
     
