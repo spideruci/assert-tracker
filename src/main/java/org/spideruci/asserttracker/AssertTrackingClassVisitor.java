@@ -33,14 +33,7 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-        
-        if (this.cv != null) {
-            MethodVisitor methodWriter = this.cv.visitMethod(access, name, descriptor, signature, exceptions);
-            return new AssertVisitor(this.api, name, methodWriter, this.isTestClass, this.testClassName);
-        }
-        else {
-            // mv = new MethodReturnAdapter(Opcodes.ASM4, className, access, name, desc, mv);
-            return new AssertVisitor(this.api, name,this.isTestClass, this.testClassName);
-        }
+        MethodVisitor methodWriter = this.cv == null ? null : this.cv.visitMethod(access, name, descriptor, signature, exceptions);
+        return new AssertVisitor(api, methodWriter, access, name, descriptor, isTestClass, testClassName);
     }
 }

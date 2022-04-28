@@ -17,24 +17,9 @@ public class AssertVisitor extends AdviceAdapter {
     String testClassName;
     boolean isDisabled;
 
-
-    public AssertVisitor(int api, MethodVisitor methodVisitor, int access, String name, String descriptor) {
-        super(api, methodVisitor, access, name, descriptor);
-        methodName = name;
-    }
-
-    public AssertVisitor(int api, String methodName, MethodVisitor methodWriter, boolean isTestClass, String testClassName) {
-        super(api, methodWriter);
-        this.methodName = methodName;
-        this.isTestAnnotationPresent= false;
-        this.isTestClass = isTestClass;
-        this.testClassName = testClassName;
-        this.isDisabled = false;
-    }
-
-    public AssertVisitor(int api, String methodName,boolean isTestClass, String testClassName) {
-        super(api);
-        this.methodName = methodName;
+    public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor, boolean isTestClass, String testClassName) {
+        super(api, methodWriter, access, name, descriptor);
+        this.methodName = name;
         this.isTestAnnotationPresent= false;
         this.isTestClass = isTestClass;
         this.testClassName = testClassName;
