@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,13 +56,13 @@ public class AssertTracker
 
                 AssertTracker tracker = new AssertTracker(classFile.toFile());
 
-//                tracker.traceAsserts();
-                 tracker.instrumentCode();
+                tracker.traceLocalVariables();
+                tracker.instrumentCode();
             }
 
         } else if (file.isFile()) {
             System.out.println(MessageFormat.format("File: {0}", args[0]));
-//            new AssertTracker(file).traceAsserts();
+            new AssertTracker(file).traceLocalVariables();
             new AssertTracker(file).instrumentCode();
         }
 
@@ -91,10 +92,39 @@ public class AssertTracker
     protected AssertTracker(File file) throws FileNotFoundException, IOException {
         this.classFile = file;
         this.classReader = new ClassReader(new FileInputStream(this.classFile));
-    } 
+    }
 
     public void traceAsserts() {
         classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9), ClassReader.EXPAND_FRAMES);
+    }
+
+    public void traceLocalVariables() {
+        // passing in an emptyWriter to generate Label offsets.
+        // we are not actually changing/rewriting the bytecode with the VariableTrackingClassVisitor.
+        ClassWriter emptyWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        var variableTrackingClassVisitor = new VariableTrackingClassVisitor(Opcodes.ASM9, emptyWriter);
+        classReader.accept(variableTrackingClassVisitor, ClassReader.EXPAND_FRAMES);
+
+        var trackedVariablesPerMethod = variableTrackingClassVisitor.liveVariablesAtAsserts;
+
+        for (var trackedVariables : trackedVariablesPerMethod.entrySet()) {
+            String methodName = trackedVariables.getKey();
+            var liveVariables = trackedVariables.getValue();
+
+            System.out.println(">> " + methodName);
+            int index = 0;
+            for (ArrayList<LocalVariable> localVariables : liveVariables) {
+                System.out.println("\t>> Assert Index:" + index);
+
+                for (LocalVariable variable : localVariables) {
+                    System.out.println("\t\t>> " + variable.loadOpcodeName() + " " + variable.varIndex + " " + variable.name + " " + variable.desc);
+                }
+
+                System.out.println();
+
+                index += 1;
+            }
+        }
     }
 
     public byte[] fetchIntrumentedCode() {

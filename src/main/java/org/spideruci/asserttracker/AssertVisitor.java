@@ -1,6 +1,7 @@
 package org.spideruci.asserttracker;
 
 import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -28,7 +29,7 @@ public class AssertVisitor extends AdviceAdapter {
 
     @Override
     protected void onMethodEnter() {
-        System.out.println("\n");
+        System.out.println("\nStarting " + methodName + "\n");
         super.onMethodEnter();
     }
 
@@ -37,7 +38,6 @@ public class AssertVisitor extends AdviceAdapter {
         System.out.println("\n");
         super.onMethodExit(opcode);
     }
-    
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
@@ -104,10 +104,10 @@ public class AssertVisitor extends AdviceAdapter {
     //     }
     // }
 
-    public Boolean isAssertionStatement(String statementName) {
-        String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals"};
-        for(String s:assertionNames){
-            if (s.equalsIgnoreCase(statementName)){
+    public static Boolean isAssertionStatement(String methodName) {
+        final String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals"};
+        for(String s : assertionNames){
+            if (s.equalsIgnoreCase(methodName)) {
                 return true;
             }
         }

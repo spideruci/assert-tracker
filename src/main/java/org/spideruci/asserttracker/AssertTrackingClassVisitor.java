@@ -18,9 +18,7 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         super(api, cw);
         this.isTestClass=false;
         this.testClassName = "unknown";
-
     }
-
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
@@ -37,3 +35,4 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         return new AssertVisitor(api, methodWriter, access, name, descriptor, isTestClass, testClassName);
     }
 }
+
