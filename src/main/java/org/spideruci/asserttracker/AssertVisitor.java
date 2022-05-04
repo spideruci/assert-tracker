@@ -171,22 +171,8 @@ public class AssertVisitor extends AdviceAdapter {
         //instrumentation for using XML to dump local variables
 
         for(LocalVariable v: localVariables) {
-            //System.err.println(new Xstream().toXML(variable))
-
-            this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
-            this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(XStream.class));
-            this.mv.visitInsn(Opcodes.DUP);
-            this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(XStream.class), "<init>", "()V", false);
+            //load the localVariable and convert it to objects if necessary
             this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
-//            31: getstatic     #12                 // Field java/lang/System.out:Ljava/io/PrintStream;
-//            34: new           #18                 // class com/thoughtworks/xstream/XStream
-//            37: dup
-//            38: invokespecial #20                 // Method com/thoughtworks/xstream/XStream."<init>":()V
-//            41: aload_1
-//            42: invokevirtual #21                 // Method com/thoughtworks/xstream/XStream.toXML:(Ljava/lang/Object;)Ljava/lang/String;
-//            45: invokevirtual #25                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
-
-            //convert primitive type to objects before using XStream.
             switch(v.loadOpcode()){
                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21
                 // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;      24
@@ -205,9 +191,8 @@ public class AssertVisitor extends AdviceAdapter {
                     this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf","(D)Ljava/lang/Double;",false);
 
             }
-
-            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(XStream.class), "toXML", "(Ljava/lang/Object;)Ljava/lang/String;", false);
-            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/DumpObject",
+                    "dumpObjectUsingXml", "(Ljava/lang/Object;)V", false);
 
 
 
@@ -218,7 +203,6 @@ public class AssertVisitor extends AdviceAdapter {
         methodLocalVariableInfo.remove(0);
 //        this.visitMaxs();
     }
-
     protected void insertPrintingProbe(String str) {
         if (this.mv == null) {
             return;
