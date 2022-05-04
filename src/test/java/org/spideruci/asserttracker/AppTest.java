@@ -84,7 +84,6 @@ public class AppTest
     {
 
         assertTrue( true );
-
         int i = 0;
         double k = 9;
 
@@ -109,6 +108,11 @@ public class AppTest
         System.out.println(k);
 
         assertTrue( false );
+    }
+
+    @Test
+    public void noLocalVariable(){
+        assertEquals(3, new Person(3,true).age);
     }
 }
 
