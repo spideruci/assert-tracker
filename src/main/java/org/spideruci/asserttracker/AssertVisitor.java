@@ -1,5 +1,6 @@
 package org.spideruci.asserttracker;
 
+import com.thoughtworks.xstream.XStream;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -7,6 +8,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.objectweb.asm.commons.AdviceAdapter;
 
@@ -17,26 +20,93 @@ public class AssertVisitor extends AdviceAdapter {
     boolean isTestClass;
     String testClassName;
     boolean isDisabled;
+    ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo;
 
-    public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor, boolean isTestClass, String testClassName) {
+    public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
+                         ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
+                         String testClassName) {
         super(api, methodWriter, access, name, descriptor);
         this.methodName = name;
         this.isTestAnnotationPresent= false;
         this.isTestClass = isTestClass;
         this.testClassName = testClassName;
         this.isDisabled = false;
+        this.methodLocalVariableInfo = methodLocalVariableInfo;
     }
 
     @Override
     protected void onMethodEnter() {
-        System.out.println("\nStarting " + methodName + "\n");
+//        System.out.println("\nStarting " + methodName + "\n");
+         if (this.isTestAnnotationPresent) {
+
+             //System.err.print("recognize an @Test Annotation");
+             this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
+             this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
+             this.mv.visitInsn(Opcodes.DUP);
+             this.mv.visitLdcInsn("recognize an @Test Annotation");
+             this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+
+             //System.err.println("Start executing outer test method: XXXXXXXX")
+             this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
+             this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
+             this.mv.visitInsn(Opcodes.DUP);
+             this.mv.visitLdcInsn("Start executing outer test method: ");
+             this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+
+             // .append(testmethodname)
+             if (this.isDisabled == true)
+                 this.mv.visitLdcInsn("DisabledMethod");
+             else
+                 this.mv.visitLdcInsn(this.methodName);
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             // .append(" ")
+             this.mv.visitLdcInsn(" TestClassName: ");
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             // .append(testClassName)
+             this.mv.visitLdcInsn(this.testClassName);
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+
+//             super.visitCode();
+         }
         super.onMethodEnter();
     }
 
     @Override
     protected void onMethodExit(int opcode) {
-        System.out.println("\n");
-        super.onMethodExit(opcode);
+//        System.out.println("\n");
+         if (this.isTestAnnotationPresent) {
+             this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
+             this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
+             this.mv.visitInsn(Opcodes.DUP);
+             this.mv.visitLdcInsn("No crash or assertion failure! Finish executing outer test method: ");
+             this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+
+             // .append(testmethodname)
+             if (this.isDisabled == true)
+                 this.mv.visitLdcInsn("DisabledMethod");
+             else
+                 this.mv.visitLdcInsn(this.methodName);
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             // .append(" ")
+             this.mv.visitLdcInsn(" TestClassName: ");
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             // .append(testClassName)
+             this.mv.visitLdcInsn(this.testClassName);
+             this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+         }
+         super.onMethodExit(opcode);
     }
 
     @Override
@@ -59,51 +129,6 @@ public class AssertVisitor extends AdviceAdapter {
     }
 
 
-    // @Override
-    // public void visitCode() {
-
-    //     // 1. if we see @Test annotation, then instrument some code
-
-    //     if (this.isTestAnnotationPresent) {
-
-    //         //System.err.print("recognize an @Test Annotation");
-    //         this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
-    //         this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
-    //         this.mv.visitInsn(Opcodes.DUP);
-    //         this.mv.visitLdcInsn("recognize an @Test Annotation");
-    //         this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
-    //         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
-    //         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-
-    //         //System.err.println("Start executing outer test method: XXXXXXXX")
-    //         this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
-    //         this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
-    //         this.mv.visitInsn(Opcodes.DUP);
-    //         this.mv.visitLdcInsn("Start executing outer test method: ");
-    //         this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
-
-    //         // .append(testmethodname)
-    //         if (this.isDisabled == true)
-    //             this.mv.visitLdcInsn("DisabledMethod");
-    //         else
-    //             this.mv.visitLdcInsn(this.methodName);
-    //         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-
-    //         // .append(" ")
-    //         this.mv.visitLdcInsn(" TestClassName: ");
-    //         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-
-    //         // .append(testClassName)
-    //         this.mv.visitLdcInsn(this.testClassName);
-    //         this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-
-    //         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
-    //         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-
-    //         super.visitCode();
-    //     }
-    // }
-
     public static Boolean isAssertionStatement(String methodName) {
         final String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals"};
         for(String s : assertionNames){
@@ -123,6 +148,7 @@ public class AssertVisitor extends AdviceAdapter {
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
             insertPrintingProbe(message);
+            insertXstreamProbe();
         }
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
@@ -134,47 +160,64 @@ public class AssertVisitor extends AdviceAdapter {
         }
     }
 
-    // @Override
-    // public void visitInsn(int opcode) {
-    //     //whenever we find a RETURN and if its method is annotated with @Test, insert something
-    //     if(this.isTestAnnotationPresent) {
-    //         switch (opcode) {
-    //             case Opcodes.IRETURN:
-    //             case Opcodes.FRETURN:
-    //             case Opcodes.ARETURN:
-    //             case Opcodes.LRETURN:
-    //             case Opcodes.DRETURN:
-    //             case Opcodes.RETURN:
-    //                 //System.err.println("No crash or assertion failure! Finish executing outer test method: XXXXXXXX")
-    //                 this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
-    //                 this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(StringBuilder.class)); //  "java/lang/StringBuilder"
-    //                 this.mv.visitInsn(Opcodes.DUP);
-    //                 this.mv.visitLdcInsn("No crash or assertion failure! Finish executing outer test method: ");
-    //                 this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "(Ljava/lang/String;)V", false);
+    protected void insertXstreamProbe(){
+        ArrayList<LocalVariable> localVariables = methodLocalVariableInfo.get(0);
+        String variableNames = "";
+        for(LocalVariable v: localVariables){
+            variableNames = variableNames + " "+ v.name;
+        }
+        System.out.println("\t\t Going to use Xstream dump "+ variableNames +" before this assertion statement.");
 
-    //                 // .append(testmethodname)
-    //                 if (this.isDisabled == true)
-    //                     this.mv.visitLdcInsn("DisabledMethod");
-    //                 else
-    //                     this.mv.visitLdcInsn(this.methodName);
-    //                 this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+        //instrumentation for using XML to dump local variables
 
-    //                 // .append(" ")
-    //                 this.mv.visitLdcInsn(" TestClassName: ");
-    //                 this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+        for(LocalVariable v: localVariables) {
+            //System.err.println(new Xstream().toXML(variable))
 
-    //                 // .append(testClassName)
-    //                 this.mv.visitLdcInsn(this.testClassName);
-    //                 this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+            this.mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "err", "Ljava/io/PrintStream;");
+            this.mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(XStream.class));
+            this.mv.visitInsn(Opcodes.DUP);
+            this.mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(XStream.class), "<init>", "()V", false);
+            this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
+//            31: getstatic     #12                 // Field java/lang/System.out:Ljava/io/PrintStream;
+//            34: new           #18                 // class com/thoughtworks/xstream/XStream
+//            37: dup
+//            38: invokespecial #20                 // Method com/thoughtworks/xstream/XStream."<init>":()V
+//            41: aload_1
+//            42: invokevirtual #21                 // Method com/thoughtworks/xstream/XStream.toXML:(Ljava/lang/Object;)Ljava/lang/String;
+//            45: invokevirtual #25                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
 
-    //                 mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
-    //                 mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-    //                 break;
-    //             default: // do nothing
-    //         }
-    //     }
-    //     super.visitInsn(opcode);
-    // }
+            //convert primitive type to objects before using XStream.
+            switch(v.loadOpcode()){
+                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21
+                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;      24
+                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;          22
+                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;        23
+                case 21:
+                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf","(I)Ljava/lang/Integer;",false);
+                    break;
+                case 22:
+                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf","(J)Ljava/lang/Long;",false);
+                    break;
+                case 23:
+                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf","(F)Ljava/lang/Float;",false);
+                    break;
+                case 24:
+                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf","(D)Ljava/lang/Double;",false);
+
+            }
+
+            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(XStream.class), "toXML", "(Ljava/lang/Object;)Ljava/lang/String;", false);
+            this.mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+
+
+
+
+       }
+
+        //
+        methodLocalVariableInfo.remove(0);
+//        this.visitMaxs();
+    }
 
     protected void insertPrintingProbe(String str) {
         if (this.mv == null) {

@@ -4,10 +4,15 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 public class AssertTrackingClassVisitor extends ClassVisitor {
 
-    public boolean isTestClass;
-    public String testClassName;
+    private boolean isTestClass;
+    private String testClassName;
+    private HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo;
+
     public AssertTrackingClassVisitor(int api) {
         super(api);
         this.isTestClass=false;
@@ -18,6 +23,13 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         super(api, cw);
         this.isTestClass=false;
         this.testClassName = "unknown";
+    }
+
+    public AssertTrackingClassVisitor(int api, ClassWriter cw, HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) {
+        super(api, cw);
+        this.isTestClass=false;
+        this.testClassName = "unknown";
+        this.localVariableInfo = localVariableInfo;
     }
 
     @Override
@@ -32,7 +44,8 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         MethodVisitor methodWriter = this.cv == null ? null : this.cv.visitMethod(access, name, descriptor, signature, exceptions);
-        return new AssertVisitor(api, methodWriter, access, name, descriptor, isTestClass, testClassName);
+        ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo = localVariableInfo.getOrDefault(name+descriptor+access,null);
+        return new AssertVisitor(api, methodWriter, access, name, descriptor, methodLocalVariableInfo, isTestClass, testClassName);
     }
 }
 
