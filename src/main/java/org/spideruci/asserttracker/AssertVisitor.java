@@ -189,10 +189,12 @@ public class AssertVisitor extends AdviceAdapter {
                     break;
                 case 24:
                     this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf","(D)Ljava/lang/Double;",false);
-
             }
+            this.mv.visitLdcInsn(v.name);
+            this.mv.visitLdcInsn(this.testClassName);
+            this.mv.visitLdcInsn(this.methodName);
             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/DumpObject",
-                    "dumpObjectUsingXml", "(Ljava/lang/Object;)V", false);
+                    "dumpObjectUsingXml", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
 
 
 
