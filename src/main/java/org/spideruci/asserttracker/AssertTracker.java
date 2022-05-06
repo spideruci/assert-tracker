@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-
+import org.apache.commons.io.FileUtils;
 /**
  * Hello world!
  *
@@ -31,10 +31,12 @@ public class AssertTracker
             return;
         }
 
-        File file = new File(args[0]);
-//        Path path = Path.of(args[0]);
-//        File file = path.toFile();
+        File xmlDirectory = new File("xmlOutput");
+        if (xmlDirectory.exists()){
+            FileUtils.forceDelete(xmlDirectory);
+        }
 
+        File file = new File(args[0]);
         if (!file.exists()) {
             final String errorMessage = MessageFormat.format("file does not exist: {0}", file.getName());
             System.out.println(errorMessage);

@@ -80,7 +80,7 @@ class LocalVariableVisitor extends AdviceAdapter {
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
 
-        if (AssertVisitor.isAssertionStatement(name)) {
+        if (Utils.isAssertionStatement(name)) {
             insns.add(VisitedAssertInvoke.makeAssertInvoke(opcode, name, descriptor, owner));
         }
 
