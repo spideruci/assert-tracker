@@ -1,8 +1,10 @@
 package org.spideruci.asserttracker;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for simple App.
@@ -30,6 +32,14 @@ public class AppTest
     public void shouldDumpInt(){
         int i =10;
         assertEquals(10,i);
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({"1,true","4,false"})
+    public void parmeterizedTest(int age, Boolean sex){
+        Person p = new Person(age,sex);
+        assertTrue(true);
     }
 
     @Test
@@ -113,6 +123,26 @@ public class AppTest
     @Test
     public void noLocalVariable(){
         assertEquals(3, new Person(3,true).age);
+    }
+
+    @Test
+    public void forLoopGenerator(){
+        Person[] persons =new Person[2];
+        persons[0]=new Person(13,false);
+        persons[1]= new Person(10,true);
+        for(Person p: persons){
+            System.out.println("do something");
+            assertTrue(true);
+        }
+        assertTrue(true);
+    }
+
+    @Test
+    public void longForLoops(){
+        for(int i =0; i<20; i++){
+            System.out.println(i);
+            assertTrue(true);
+        }
     }
 }
 
