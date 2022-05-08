@@ -5,13 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,14 +105,15 @@ public class AssertTracker
     public HashMap<String, ArrayList<ArrayList<LocalVariable>>> traceLocalVariables() {
         // passing in an emptyWriter to generate Label offsets.
         // we are not actually changing/rewriting the bytecode with the VariableTrackingClassVisitor.
-        ClassWriter emptyWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        var variableTrackingClassVisitor = new VariableTrackingClassVisitor(Opcodes.ASM9, emptyWriter);
+        ClassWriter emptyWriter = new ClassWriter(ClassReader.EXPAND_FRAMES);
+        VariableTrackingClassVisitor variableTrackingClassVisitor = new VariableTrackingClassVisitor(Opcodes.ASM9, emptyWriter);
         classReader.accept(variableTrackingClassVisitor, ClassReader.EXPAND_FRAMES);
-        var trackedVariablesPerMethod = variableTrackingClassVisitor.liveVariablesAtAsserts;
+//        classReader.accept(variableTrackingClassVisitor,ClassReader.SKIP_FRAMES);
+        HashMap<String,ArrayList<ArrayList<LocalVariable>>> trackedVariablesPerMethod = variableTrackingClassVisitor.liveVariablesAtAsserts;
 
-        for (var trackedVariables : trackedVariablesPerMethod.entrySet()) {
+        for (Map.Entry<String, ArrayList<ArrayList<LocalVariable>>> trackedVariables : trackedVariablesPerMethod.entrySet()) {
             String methodName = trackedVariables.getKey();
-            var liveVariables = trackedVariables.getValue();
+            ArrayList<ArrayList<LocalVariable>> liveVariables = trackedVariables.getValue();
 
             System.out.println(">> " + methodName);
             int index = 0;
@@ -122,9 +123,6 @@ public class AssertTracker
                 for (LocalVariable variable : localVariables) {
                     System.out.println("\t\t>> " + variable.loadOpcodeName() + " " + variable.varIndex + " " + variable.name + " " + variable.desc);
                 }
-
-                System.out.println();
-
                 index += 1;
             }
         }
@@ -132,7 +130,7 @@ public class AssertTracker
     }
 
     public byte[] fetchIntrumentedCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) {
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer,localVariableInfo), ClassReader.EXPAND_FRAMES);
         return writer.toByteArray();
     }
