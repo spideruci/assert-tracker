@@ -104,15 +104,13 @@ class LocalVariableVisitor extends AdviceAdapter {
 //        System.out.println("start computing");
         ArrayList<ArrayList<LocalVariable>> liveVarsAtAsserts = new ArrayList<>();
         int lastKnownOffset = 0;
-        Boolean variableInTryCatch = false;
         for (VisitedInsn insn : this.insns) {
             if (insn.getType() == Type.AssertInvoke) {
                 ArrayList<LocalVariable> liveSet = new ArrayList<>();
                 for (LocalVariable variable : this.localVars) {
-                    if (variableInTryCatch==false && variable.startOffset() <= lastKnownOffset && lastKnownOffset <= variable.endOffset()) {
+                    if (variable.startOffset() <= lastKnownOffset && lastKnownOffset <= variable.endOffset()) {
                         liveSet.add(variable);
                     }
-                    variableInTryCatch = false;
                 }
 
                 liveVarsAtAsserts.add(liveSet);
