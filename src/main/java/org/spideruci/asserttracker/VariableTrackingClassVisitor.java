@@ -2,7 +2,6 @@ package org.spideruci.asserttracker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -16,11 +15,9 @@ import org.spideruci.asserttracker.VisitedInsn.Type;
 public class VariableTrackingClassVisitor extends ClassVisitor implements LiveVariableTrackingCallBack {
 
     public final HashMap<String, ArrayList<ArrayList<LocalVariable>>> liveVariablesAtAsserts = new HashMap<>();
-
     public VariableTrackingClassVisitor(int api) {
         super(api);
     }
-
     public VariableTrackingClassVisitor(int api, ClassVisitor cv) {
         super(api, cv);
     }
@@ -35,7 +32,6 @@ public class VariableTrackingClassVisitor extends ClassVisitor implements LiveVa
 
     @Override
     public void visitEnd() {
-        System.out.println("End");
         super.visitEnd();
     }
 
@@ -57,6 +53,7 @@ class LocalVariableVisitor extends AdviceAdapter {
 
     private ArrayList<VisitedInsn> insns = new ArrayList<>();
     private ArrayList<LocalVariable> localVars = new ArrayList<>();
+//    public ArrayList<ExceptionRange> tryCatchRanges = new ArrayList<>();
     private final LiveVariableTrackingCallBack liveVariableTracker;
     private final String methodName;
 
@@ -66,6 +63,7 @@ class LocalVariableVisitor extends AdviceAdapter {
         final String name,
         final String descriptor, 
         LiveVariableTrackingCallBack liveVarTracker) {
+
         super(api, mv, access, name, descriptor);
         this.liveVariableTracker = liveVarTracker;
         this.methodName = name + descriptor + access;
@@ -89,30 +87,32 @@ class LocalVariableVisitor extends AdviceAdapter {
 
     @Override
     public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
+        System.out.println("variable"+" "+name+start.getOffset()+" "+end.getOffset());
         super.visitLocalVariable(name, descriptor, signature, start, end, index);
         localVars.add(new LocalVariable(name, descriptor, index, start, end));
     }
 
     @Override
     public void visitEnd() {
+//        System.out.println("end");
         super.visitEnd();
-
         ArrayList<ArrayList<LocalVariable>> liveVarAtAsserts = this.computeLiveVarsAtAsserts();
         liveVariableTracker.trackLiveLocalVariablesAtAssert(methodName, liveVarAtAsserts);
     }
 
     public ArrayList<ArrayList<LocalVariable>> computeLiveVarsAtAsserts() {
+//        System.out.println("start computing");
         ArrayList<ArrayList<LocalVariable>> liveVarsAtAsserts = new ArrayList<>();
-
         int lastKnownOffset = 0;
-
+        Boolean variableInTryCatch = false;
         for (VisitedInsn insn : this.insns) {
             if (insn.getType() == Type.AssertInvoke) {
                 ArrayList<LocalVariable> liveSet = new ArrayList<>();
                 for (LocalVariable variable : this.localVars) {
-                    if (variable.startOffset() <= lastKnownOffset && lastKnownOffset <= variable.endOffset()) {
+                    if (variableInTryCatch==false && variable.startOffset() <= lastKnownOffset && lastKnownOffset <= variable.endOffset()) {
                         liveSet.add(variable);
                     }
+                    variableInTryCatch = false;
                 }
 
                 liveVarsAtAsserts.add(liveSet);

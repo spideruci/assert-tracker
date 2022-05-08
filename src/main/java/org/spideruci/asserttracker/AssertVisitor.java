@@ -11,7 +11,6 @@ import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import org.objectweb.asm.commons.AdviceAdapter;
 
 public class AssertVisitor extends AdviceAdapter {
@@ -43,12 +42,12 @@ public class AssertVisitor extends AdviceAdapter {
              String content = "recognize an @Test Annotation";
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                      "printString", "(Ljava/lang/String;)V", false);
              if(Utils.calculateParaNum(this.methodDesc)!=0){
                  content = "parameterized/multilocale test: run at"+ System.nanoTime();
                  this.mv.visitLdcInsn(content);
-                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                          "printString", "(Ljava/lang/String;)V", false);
              }
              content = "Start executing outer test method: ";
@@ -59,7 +58,7 @@ public class AssertVisitor extends AdviceAdapter {
              content = content+" TestClassName: "+this.testClassName;
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                      "printString", "(Ljava/lang/String;)V", false);
          }
         super.onMethodEnter();
@@ -79,7 +78,7 @@ public class AssertVisitor extends AdviceAdapter {
 
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                      "printString", "(Ljava/lang/String;)V", false);
         }
          super.onMethodExit(opcode);
@@ -127,6 +126,9 @@ public class AssertVisitor extends AdviceAdapter {
     }
 
     protected void insertXstreamProbe(){
+        if (methodLocalVariableInfo.size()==0){
+            return;
+        }
         ArrayList<LocalVariable> localVariables = methodLocalVariableInfo.get(0);
         String variableNames = "";
         for(LocalVariable v: localVariables){
@@ -162,7 +164,7 @@ public class AssertVisitor extends AdviceAdapter {
             }else{
                 this.mv.visitLdcInsn(this.methodName);
             }
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                     "dumpObjectUsingXml", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
        }
 
@@ -176,7 +178,7 @@ public class AssertVisitor extends AdviceAdapter {
         String content = "\t" +Instant.now().toEpochMilli()+"//"+System.nanoTime()+str+" testClassName: "+this.testClassName;
         this.mv.visitLdcInsn(content);
         //invoke InstrumentationUtils.printString(content)
-        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/spideruci/asserttracker/InstrumentationUtils",
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                 "printString", "(Ljava/lang/String;)V", false);
     }
     

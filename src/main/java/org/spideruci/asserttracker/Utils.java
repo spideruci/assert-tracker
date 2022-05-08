@@ -13,11 +13,14 @@ public class Utils {
         Matcher matcher1 = pattern1.matcher(methodDesc);
         String paras = "";
         if(matcher1.find()){
-            paras = matcher1.group(0).substring(1,methodDesc.length()-2);
+            if(matcher1.group(0).length()==2)
+                return 0;
+            paras = matcher1.group(0).substring(1,methodDesc.length()-1);
         }
         Pattern pattern2 = Pattern.compile("\\[*([ZCBSIFJD]|L.*?;)");
         Matcher matcher2 = pattern2.matcher(paras);
-        return (int) matcher2.results().count();
+        return matcher2.groupCount();
+//        return (int) matcher2.results().count();
     }
 
     public static Boolean isAssertionStatement(String methodName) {
