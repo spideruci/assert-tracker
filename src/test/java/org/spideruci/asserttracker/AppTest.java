@@ -1,9 +1,9 @@
 package org.spideruci.asserttracker;
 
+import com.thoughtworks.xstream.XStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -116,7 +116,6 @@ public class AppTest
         }
 
         System.out.println(k);
-
         assertTrue( false );
     }
 
@@ -143,6 +142,35 @@ public class AppTest
             System.out.println(i);
             assertTrue(true);
         }
+    }
+
+    @Test
+    public void testTryCatch(){
+        Person person1 = new Person(2,false);
+        try{
+            Person person = new Person(1,true);
+            assertTrue(true);
+        }catch(Exception e){
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        }
+        assertTrue(true);
+    }
+
+    @Test
+    public void testLong(){
+        //this: ALOAD 0
+        for (int i = 0; i < 3; i++) {//25000
+            //i: ILOAD 1
+        }
+        //wierd the index of  variable below changed when instrumenting something without introducing local variable;
+        //without instrumenting, it's LLOAD 1;after instrmention, it's LLOAD2
+        long start = System.currentTimeMillis();
+
+        //after removing p local variable below, it's back to LLOAD1
+        Person p = new Person(1,true);
+        assertEquals(50000, 50000);//50000
+        System.out.println(start);
     }
 }
 
