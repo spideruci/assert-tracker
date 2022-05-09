@@ -71,6 +71,7 @@ class LocalVariableVisitor extends AdviceAdapter {
 
     @Override
     public void visitLabel(Label label) {
+
         insns.add(VisitedInsn.makeLabel(label));
         super.visitLabel(label);
     }
@@ -85,9 +86,10 @@ class LocalVariableVisitor extends AdviceAdapter {
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
     }
 
+
     @Override
     public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
-        System.out.println("variable"+" "+name+start.getOffset()+" "+end.getOffset());
+//        System.out.println("visiting local variable"+" "+name+start.getOffset()+" "+end.getOffset());
         super.visitLocalVariable(name, descriptor, signature, start, end, index);
         localVars.add(new LocalVariable(name, descriptor, index, start, end));
     }
@@ -102,17 +104,29 @@ class LocalVariableVisitor extends AdviceAdapter {
 
     public ArrayList<ArrayList<LocalVariable>> computeLiveVarsAtAsserts() {
 //        System.out.println("start computing");
+//        for(ExceptionRange range: this.tryCatchRanges){
+//            System.out.println("try catch block range start: "+range.start.getOffset()+" end: "+range.end.getOffset()+"handler: "+range.handler.getOffset());
+//        }
         ArrayList<ArrayList<LocalVariable>> liveVarsAtAsserts = new ArrayList<>();
         int lastKnownOffset = 0;
+//        for(VisitedInsn insn: this.insns){
+//            System.out.println("insn type: "+insn.getType());
+//            if(insn.getType().equals(Type.Label)){
+//                VisitedLabel visitedLabel = (VisitedLabel) insn;
+//                int offset = visitedLabel.label.getOffset();
+//                System.out.println("Label: created: "+offset);
+//            }
+//        }
         for (VisitedInsn insn : this.insns) {
             if (insn.getType() == Type.AssertInvoke) {
                 ArrayList<LocalVariable> liveSet = new ArrayList<>();
                 for (LocalVariable variable : this.localVars) {
-                    if (variable.startOffset() <= lastKnownOffset && lastKnownOffset <= variable.endOffset()) {
+//                    System.out.println("observed variable range: "+variable.name+" "+variable.startOffset()+" "+variable.endOffset());
+                    if (variable.startOffset() <= lastKnownOffset && lastKnownOffset < variable.endOffset()) {
+//                        System.out.println("added the above variable");
                         liveSet.add(variable);
                     }
                 }
-
                 liveVarsAtAsserts.add(liveSet);
                 continue;
             }
@@ -235,4 +249,16 @@ class VisitedAssertInvoke extends VisitedInsn {
         return Type.AssertInvoke;
     }
 
+}
+
+
+class ExceptionRange{
+    Label start;
+    Label end;
+    Label handler;
+    public ExceptionRange(Label start,Label end,Label handler){
+        this.start = start;
+        this.end = end;
+        this.handler = handler;
+    }
 }
