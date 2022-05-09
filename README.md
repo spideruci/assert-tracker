@@ -1,4 +1,54 @@
 # Assert Tracker
+### Running instructions
+For running this project's test cases:
+
+1. generate jar file:
+mvn clean compile assembly:single test-compile
+
+2. instrumentation:
+java -jar "Path………………/target/assert-tracker-1.0-SNAPSHOT-jar-with-dependencies.jar" target/test-classes
+
+3. mvn test
+mvn  test 1>result.txt 2>out.txt
+
+4. the output
+
+result.txt contains test suite statistics
+out.txt contains method entry and exit info
+
+xmlOutput directory contains xml files
+
+InstrumentationUtils.java includes helper functions that can be invoked in instrumentation part so that no more new local variables would be introduced. Changing the direct java code when using XStream to dump objects is easier than changing bytecode.
+However, the bad part is, it's necessary to move this file to other projects to be tested.
+
+About the bug:
+testLong method in AppTest triggers the bug. After instrumentation, the "LLOAD index" is changed for long type variable start
+either changing long type to int type or removing Person p would make the bug disapppear.
+
+
+For running other prejects' test cases
+copy and make sure that InstrumentationUtils.java file is within the test directory in maven project
+include XStream dependency in other projects' POM file,
+<dependencies>
+    <dependency>
+      <groupId>xpp3</groupId>
+      <artifactId>xpp3</artifactId>
+      <version>1.1.4c</version>
+    </dependency>
+    <dependency>
+      <groupId>com.thoughtworks.xstream</groupId>
+      <artifactId>xstream</artifactId>
+      <version>1.4.19</version>
+    </dependency>
+<dependencies>
+
+
+
+
+
+
+make sure the program tested contain InstrumentationUtils
+
 
 ### Demo
 
