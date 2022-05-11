@@ -11,7 +11,7 @@ java -jar "Path………………/target/assert-tracker-1.0-SNAPSHOT-jar-with-de
 3. mvn test
 mvn  test 1>result.txt 2>out.txt
 
-4. the output
+4. the output(please comment tryLong test case, since it leads to a bug that leads to nothing in the output)
 
 result.txt contains test suite statistics
 out.txt contains method entry and exit info
