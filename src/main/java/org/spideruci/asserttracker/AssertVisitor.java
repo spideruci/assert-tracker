@@ -109,7 +109,11 @@ public class AssertVisitor extends AdviceAdapter {
 
         Boolean isAssert = Utils.isAssertionStatement(name);
 
-        if (isAssert) {
+        if (isAssert && isTestAnnotationPresent) {
+            // only consider the first layer of assertion statements, i.e., the assertion statements in the test case method labeled with "@Test" annotation
+            // sometimes, public test case method invokes private method where it holds some assertion statements, we do not do instrumentation
+            // since they usually accept some parameters from the outer method. If those parameters are tainted, they would be tainted to the private method
+
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
             insertPrintingProbe(message);
@@ -118,7 +122,7 @@ public class AssertVisitor extends AdviceAdapter {
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-        if (isAssert) {
+        if (isAssert && isTestAnnotationPresent) {
             String message = "\t end:" + this.methodName + " " + name;
             System.out.println(message);
             insertPrintingProbe(message);
