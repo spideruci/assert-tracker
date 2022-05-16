@@ -39,13 +39,13 @@ public class AssertVisitor extends AdviceAdapter {
 //        System.out.println("\nStarting " + methodName + "\n");
 
          if (this.isTestAnnotationPresent) {
-             String content = "recognize an @Test Annotation";
+             String content = "recognize an @Test Annotation ";
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
              this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                      "printString", "(Ljava/lang/String;)V", false);
              if(Utils.calculateParaNum(this.methodDesc)!=0){
-                 content = "parameterized/multilocale test: run at"+ System.nanoTime();
+                 content = "parameterized/multilocale test: run at ";
                  this.mv.visitLdcInsn(content);
                  this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                          "printString", "(Ljava/lang/String;)V", false);
@@ -74,7 +74,7 @@ public class AssertVisitor extends AdviceAdapter {
                  content = content+ "DisabledMethod";
              else
                  content = content+this.methodName;
-             content = content +" TestClassName: "+this.testClassName;
+             content = content +" TestClassName: "+this.testClassName+ " ";
 
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
@@ -164,7 +164,7 @@ public class AssertVisitor extends AdviceAdapter {
             this.mv.visitLdcInsn(v.name);
             this.mv.visitLdcInsn(this.testClassName);
             if(Utils.calculateParaNum(methodDesc)!=0){
-                this.mv.visitLdcInsn(this.methodName+ File.separator+"para "+System.nanoTime());
+                this.mv.visitLdcInsn(this.methodName);
             }else{
                 this.mv.visitLdcInsn(this.methodName);
             }
@@ -179,7 +179,8 @@ public class AssertVisitor extends AdviceAdapter {
         if (this.mv == null) {
             return;
         }
-        String content = "\t" +Instant.now().toEpochMilli()+"//"+System.nanoTime()+str+" testClassName: "+this.testClassName;
+
+        String content = "\t"+str+" testClassName: "+this.testClassName+" ";
         this.mv.visitLdcInsn(content);
         //invoke InstrumentationUtils.printString(content)
         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
