@@ -55,7 +55,7 @@ public class AssertVisitor extends AdviceAdapter {
                  content = content +"DisabledMethod";
              else
                  content = content +this.methodName;
-             content = content+" TestClassName: "+this.testClassName;
+             content = content+" TestClassName: "+this.testClassName+" ";
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
              this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
@@ -118,12 +118,20 @@ public class AssertVisitor extends AdviceAdapter {
             System.out.println(message);
             insertPrintingProbe(message);
             insertXstreamProbe();
+        }else if(isAssert){
+            String message = "\t + nested method Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
+            System.out.println(message);
+            insertPrintingProbe(message);
         }
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
         if (isAssert && isTestAnnotationPresent) {
             String message = "\t end:" + this.methodName + " " + name;
+            System.out.println(message);
+            insertPrintingProbe(message);
+        }else if(isAssert){
+            String message = "\t nested method end:" + this.methodName + " " + name;
             System.out.println(message);
             insertPrintingProbe(message);
         }
