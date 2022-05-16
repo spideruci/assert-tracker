@@ -1,7 +1,8 @@
 import com.thoughtworks.xstream.XStream;
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 public class InstrumentationUtils {
@@ -18,14 +19,24 @@ public class InstrumentationUtils {
         }
         try{
             XStream xstream = new XStream();
-            new XStream().toXML(o,new FileWriter(base+File.separator+name+" "+System.nanoTime()+".xml"));
+            String path = base+File.separator+name+" "+System.nanoTime()+".xml";
+            FileWriter fw = new FileWriter(path);
+            new XStream().toXML(o,fw);
         }catch(Exception e){
             System.err.println("there is something wrong when using XStream at "+System.nanoTime());
         }
+
+
+
     }
 
     public static void printString(String content){
-        System.err.println(content);
+        System.err.println(content+System.nanoTime());
     }
 
+
+
 }
+
+
+
