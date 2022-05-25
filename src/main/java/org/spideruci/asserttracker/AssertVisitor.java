@@ -22,6 +22,8 @@ public class AssertVisitor extends AdviceAdapter {
     boolean isDisabled;
     ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo;
 
+    public String classOwner;
+
     public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
                          String testClassName) {
@@ -32,13 +34,14 @@ public class AssertVisitor extends AdviceAdapter {
         this.testClassName = testClassName;
         this.isDisabled = false;
         this.methodLocalVariableInfo = methodLocalVariableInfo;
+        this.classOwner=null;
     }
 
     @Override
     protected void onMethodEnter() {
-//        System.out.println("\nStarting " + methodName + "\n");
 
-         if (this.isTestAnnotationPresent) {
+        if (this.isTestAnnotationPresent) {
+             this.cleanObjectarray();
              String content = "recognize an @Test Annotation ";
              this.mv.visitLdcInsn(content);
              //invoke InstrumentationUtils.printString(content)
@@ -66,8 +69,8 @@ public class AssertVisitor extends AdviceAdapter {
 
     @Override
     protected void onMethodExit(int opcode) {
-//        System.out.println("\n");
          if (this.isTestAnnotationPresent) {
+             this.cleanObjectarray();
              String content = "No crash or assertion failure! Finish executing outer test method: ";
              // .append(testmethodname)
              if (this.isDisabled == true)
@@ -80,7 +83,7 @@ public class AssertVisitor extends AdviceAdapter {
              //invoke InstrumentationUtils.printString(content)
              this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                      "printString", "(Ljava/lang/String;)V", false);
-        }
+         }
          super.onMethodExit(opcode);
     }
 
@@ -116,6 +119,7 @@ public class AssertVisitor extends AdviceAdapter {
 
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
+            cleanObjectarray();
             insertPrintingProbe(message);
             insertXstreamProbe();
         }else if(isAssert){
@@ -141,6 +145,7 @@ public class AssertVisitor extends AdviceAdapter {
         if (methodLocalVariableInfo.size()==0){
             return;
         }
+
         ArrayList<LocalVariable> localVariables = methodLocalVariableInfo.get(0);
         String variableNames = "";
         for(LocalVariable v: localVariables){
@@ -148,10 +153,29 @@ public class AssertVisitor extends AdviceAdapter {
         }
         System.out.println("\t\t Going to use Xstream dump "+ variableNames +" before this assertion statement.");
 
-        //instrumentation for using XML to dump local variables
+        // make an object array
+
+        //aload 0: load "this"
+        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+        //iconst_x: get the size of the object array
+        this.mv.visitLdcInsn(localVariables.size());
+        //anewarray: create a new array
+        this.mv.visitTypeInsn(Opcodes.ANEWARRAY, Type.getInternalName(Object.class));
+        //putfield
+        this.mv.visitFieldInsn(Opcodes.PUTFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+
+        //stuff local variables into this object array
+        int index = 0;
+        String variables_name = "";
         for(LocalVariable v: localVariables) {
-            //load the localVariable and convert it to objects if necessary
+            //aload 0: load "this"
+            this.mv.visitVarInsn(Opcodes.ALOAD,0);
+            this.mv.visitFieldInsn(Opcodes.GETFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+            //iconst_x: get the xth local variable
+            this.mv.visitLdcInsn(index);
+            //load the local variable to be stored
             this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
+            // transfrom some primitive types as objects
             switch(v.loadOpcode()){
                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21
                 // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;      24
@@ -169,19 +193,60 @@ public class AssertVisitor extends AdviceAdapter {
                 case 24:
                     this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf","(D)Ljava/lang/Double;",false);
             }
-            this.mv.visitLdcInsn(v.name);
-            this.mv.visitLdcInsn(this.testClassName);
-            if(Utils.calculateParaNum(methodDesc)!=0){
-                this.mv.visitLdcInsn(this.methodName);
-            }else{
-                this.mv.visitLdcInsn(this.methodName);
-            }
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "dumpObjectUsingXml", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
-       }
+            this.mv.visitInsn(Opcodes.AASTORE);
+            index = index+1;
+            variables_name = variables_name +v.name+" ";
+        }
+
+        //get the object array object
+        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+        this.mv.visitFieldInsn(Opcodes.GETFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+
+        //dump the object array using XStream
+        this.mv.visitLdcInsn(variables_name);
+        this.mv.visitLdcInsn(this.testClassName);
+        this.mv.visitLdcInsn(this.methodName);
+        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                "dumpObjectUsingXml", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
+
+
+
+//
+//
+//
+//        //instrumentation for using XML to dump local variables
+//        for(LocalVariable v: localVariables) {
+//            //load the localVariable and convert it to objects if necessary
+//            this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
+//            switch(v.loadOpcode()){
+//                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21
+//                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;      24
+//                // Method java/lang/Long.valueOf:(J)Ljava/lang/Long;          22
+//                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;        23
+//                case 21:
+//                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf","(I)Ljava/lang/Integer;",false);
+//                    break;
+//                case 22:
+//                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf","(J)Ljava/lang/Long;",false);
+//                    break;
+//                case 23:
+//                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf","(F)Ljava/lang/Float;",false);
+//                    break;
+//                case 24:
+//                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf","(D)Ljava/lang/Double;",false);
+//            }
+//            this.mv.visitLdcInsn(v.name);
+//            this.mv.visitLdcInsn(this.testClassName);
+//            if(Utils.calculateParaNum(methodDesc)!=0){
+//                this.mv.visitLdcInsn(this.methodName);
+//            }else{
+//                this.mv.visitLdcInsn(this.methodName);
+//            }
+//            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+//                    "dumpObjectUsingXml", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false);
+//       }
 
         methodLocalVariableInfo.remove(0);
-//        this.visitMaxs();
     }
     protected void insertPrintingProbe(String str) {
         if (this.mv == null) {
@@ -193,6 +258,19 @@ public class AssertVisitor extends AdviceAdapter {
         //invoke InstrumentationUtils.printString(content)
         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                 "printString", "(Ljava/lang/String;)V", false);
+    }
+
+    protected void cleanObjectarray(){
+
+        //load "this"
+        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+//        aload_0
+//        34: aconst_null
+//        35: putfield      #89                 // Field _ObjectArray:[Ljava/lang/Object;
+        this.mv.visitInsn(Opcodes.ACONST_NULL);
+//        this.mv.visitLdcInsn(Opcodes.ACONST_NULL);
+        this.mv.visitFieldInsn(Opcodes.PUTFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+
     }
     
 }

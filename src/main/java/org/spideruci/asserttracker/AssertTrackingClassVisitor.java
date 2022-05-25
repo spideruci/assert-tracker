@@ -2,10 +2,16 @@ package org.spideruci.asserttracker;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+
 
 public class AssertTrackingClassVisitor extends ClassVisitor {
 
@@ -36,8 +42,22 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         //sometimes they are not names for test classes, but it doesn't matter. Since we only print out assertion info
         //it indicates that it's a test class name
+        Pattern testclasspattern = Pattern.compile("test");
+        Matcher testclassmatcher = testclasspattern.matcher(name.toLowerCase());
+        if(testclassmatcher.find()){
+            this.isTestClass = true;
+        }
         this.testClassName = name.replace("/",".");
+        //instrument a new object array field
+        if(this.isTestClass){
+            this.visitField(access,"_ObjectArray","[Ljava/lang/Object;",null, (Object)null);
+        }
         super.visit(version, access, name, signature, superName, interfaces);
+    }
+
+    @Override
+    public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+        return super.visitField(access, name, descriptor, signature, value);
     }
 
 

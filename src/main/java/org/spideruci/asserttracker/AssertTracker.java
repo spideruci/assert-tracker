@@ -55,6 +55,7 @@ public class AssertTracker
                                         .collect(Collectors.toList());
             }
 
+//            ZipFileManager zfm = new ZipFileManager("xmlOutput.zip");
             for (Path classFile : classFiles) {
                 System.out.println("## " + classFile.toAbsolutePath().getFileName());
 
@@ -63,6 +64,7 @@ public class AssertTracker
                 HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo = tracker.traceLocalVariables();
                 tracker.instrumentCode(localVariableInfo);
             }
+//            zfm.closeZipFile();
 
         } else if (file.isFile()) {
             System.out.println(MessageFormat.format("File: {0}", args[0]));
@@ -132,19 +134,19 @@ public class AssertTracker
     public byte[] fetchIntrumentedCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer,localVariableInfo), ClassReader.EXPAND_FRAMES);
-        return writer.toByteArray();
-    }
+                return writer.toByteArray();
+                }
 
-    public void instrumentCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) throws IOException {
+public void instrumentCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) throws IOException {
         byte[] code = fetchIntrumentedCode(localVariableInfo);
         replaceOriginalCode(code);
-    }
+        }
 
-    public void replaceOriginalCode(byte[] code) throws IOException {
+public void replaceOriginalCode(byte[] code) throws IOException {
         PrintStream byteStream = new PrintStream(this.classFile.getAbsolutePath());
         byteStream.write(code);
         byteStream.close();
-    }
+        }
 
-}
+        }
 
