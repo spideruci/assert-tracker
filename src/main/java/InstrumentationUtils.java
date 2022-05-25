@@ -1,4 +1,7 @@
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.reflection.FieldDictionary;
+import com.thoughtworks.xstream.converters.reflection.SunUnsafeReflectionProvider;
+import com.thoughtworks.xstream.converters.reflection.XStream12FieldKeySorter;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
@@ -18,15 +21,16 @@ public class InstrumentationUtils {
             System.err.println("failed to make directory for"+testClassName+" "+testMethodName);
         }
         try{
-            XStream xstream = new XStream();
+            XStream12FieldKeySorter sorter = new XStream12FieldKeySorter();
+            XStream xstream = new XStream(new SunUnsafeReflectionProvider(new FieldDictionary(sorter)));
+            xstream.setMode(XStream.ID_REFERENCES);
             String path = base+File.separator+name+" "+System.nanoTime()+".xml";
             FileWriter fw = new FileWriter(path);
-            new XStream().toXML(o,fw);
+            xstream.toXML(o,fw);
         }catch(Exception e){
-            System.err.println("there is something wrong when using XStream at "+System.nanoTime());
+            System.err.println("there is something wrong when using XStream at "+System.nanoTime()+" for "
+                +base+File.separator+name+" "+System.nanoTime());
         }
-
-
 
     }
 
