@@ -42,14 +42,29 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         //sometimes they are not names for test classes, but it doesn't matter. Since we only print out assertion info
         //it indicates that it's a test class name
+
         Pattern testclasspattern = Pattern.compile("test");
         Matcher testclassmatcher = testclasspattern.matcher(name.toLowerCase());
         if(testclassmatcher.find()){
             this.isTestClass = true;
         }
+
+        //Sometimes there are inner classes within a Test class Their names are like "xxxxTest$XXXX"
+        //exclude those classes whose name contain "$"
+        Pattern testclassexcludepattern = Pattern.compile("\\$");
+        Matcher testclassexcludematcher = testclassexcludepattern.matcher(name.toLowerCase());
+        if(testclassexcludematcher.find()){
+            this.isTestClass = false;
+        }
+
         this.testClassName = name.replace("/",".");
         //instrument a new object array field
         if(this.isTestClass){
+            System.out.println("hahahahah");
+            for(String n:interfaces){
+                System.out.println("niubi"+n);
+            }
+            System.out.println(name);
             this.visitField(access,"_ObjectArray","[Ljava/lang/Object;",null, (Object)null);
         }
         super.visit(version, access, name, signature, superName, interfaces);
