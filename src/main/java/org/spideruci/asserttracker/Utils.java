@@ -1,6 +1,9 @@
 package org.spideruci.asserttracker;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.regex.Matcher;
@@ -34,6 +37,20 @@ public class Utils {
         }
         return false;
     }
+
+    public static void appendLogAt(String filename, String[] lines){
+        try (FileWriter f = new FileWriter(filename, true);
+             BufferedWriter b = new BufferedWriter(f);
+             PrintWriter p = new PrintWriter(b);)
+        {
+            for(String line: lines){
+                p.println(line);
+            }
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
+    }
+
 
 
 }

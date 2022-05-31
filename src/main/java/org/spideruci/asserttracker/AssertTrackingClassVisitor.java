@@ -48,6 +48,9 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         if(testclassmatcher.find()){
             this.isTestClass = true;
         }
+        if(name.endsWith("IT")){
+            this.isTestClass = true;
+        }
 
         //Sometimes there are inner classes within a Test class Their names are like "xxxxTest$XXXX"
         //exclude those classes whose name contain "$"
@@ -60,11 +63,11 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         this.testClassName = name.replace("/",".");
         //instrument a new object array field
         if(this.isTestClass){
-            System.out.println("hahahahah");
-            for(String n:interfaces){
-                System.out.println("niubi"+n);
-            }
-            System.out.println(name);
+//            System.out.println("hahahahah");
+//            for(String n:interfaces){
+//                System.out.println("niubi"+n);
+//            }
+//            System.out.println(name);
             this.visitField(access,"_ObjectArray","[Ljava/lang/Object;",null, (Object)null);
         }
         super.visit(version, access, name, signature, superName, interfaces);

@@ -7,7 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.io.File;
+import java.io.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,8 +21,8 @@ public class AssertVisitor extends AdviceAdapter {
     String testClassName;
     boolean isDisabled;
     ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo;
-
     public String classOwner;
+    boolean hasAssertions;
 
     public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
@@ -35,6 +35,7 @@ public class AssertVisitor extends AdviceAdapter {
         this.isDisabled = false;
         this.methodLocalVariableInfo = methodLocalVariableInfo;
         this.classOwner=null;
+        this.hasAssertions = false;
     }
 
     @Override
@@ -70,6 +71,9 @@ public class AssertVisitor extends AdviceAdapter {
     @Override
     protected void onMethodExit(int opcode) {
          if (this.isTestAnnotationPresent) {
+             if (this.hasAssertions==false){
+                 Utils.appendLogAt("No_Assertions.txt",new String[]{testClassName+" "+methodName});
+             }
              this.cleanObjectarray();
              String content = "No crash or assertion failure! Finish executing outer test method: ";
              // .append(testmethodname)
@@ -113,6 +117,7 @@ public class AssertVisitor extends AdviceAdapter {
         Boolean isAssert = Utils.isAssertionStatement(name);
 
         if (isAssert && isTestAnnotationPresent) {
+            this.hasAssertions = true;
             // only consider the first layer of assertion statements, i.e., the assertion statements in the test case method labeled with "@Test" annotation
             // sometimes, public test case method invokes private method where it holds some assertion statements, we do not do instrumentation
             // since they usually accept some parameters from the outer method. If those parameters are tainted, they would be tainted to the private method
@@ -121,7 +126,9 @@ public class AssertVisitor extends AdviceAdapter {
             System.out.println(message);
             cleanObjectarray();
             insertPrintingProbe(message);
-            insertXstreamProbe();
+            if(this.isTestClass){
+                insertXstreamProbe();
+            }
         }else if(isAssert){
             String message = "\t + nested method Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
