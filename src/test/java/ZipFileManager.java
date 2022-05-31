@@ -48,12 +48,12 @@ public class ZipFileManager {
                         .filter(p -> p.toFile().getName().endsWith(".xml"))
                         .collect(Collectors.toList());
             }
-
+            if (xmlFiles.size()==0){
+                return;
+            }
             List<Path> deleteFiles = new LinkedList<Path>();
             try (FileSystem zipfs = FileSystems.newFileSystem(zip_loc, zip_properties)) {
-                if (xmlFiles.size()==0){
-                    return;
-                }
+
                 for (Path xmlFile : xmlFiles) {
                     File nextFile = new File(xmlFile.toString());
                     long currentTime = System.nanoTime();
