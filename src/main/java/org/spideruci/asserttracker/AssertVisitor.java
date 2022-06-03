@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.objectweb.asm.commons.AdviceAdapter;
 
-public class AssertVisitor extends AdviceAdapter {
+public class AssertVisitor extends MethodVisitor {
 
     final public String methodName;
     public Boolean isTestAnnotationPresent;
@@ -24,10 +24,15 @@ public class AssertVisitor extends AdviceAdapter {
     public String classOwner;
     boolean hasAssertions;
 
+    public String methodDesc;
+
+
+
     public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
                          String testClassName) {
-        super(api, methodWriter, access, name, descriptor);
+        super(api, methodWriter);
+//        super(api, methodWriter, access, name, descriptor);
         this.methodName = name;
         this.isTestAnnotationPresent= false;
         this.isTestClass = isTestClass;
@@ -36,61 +41,80 @@ public class AssertVisitor extends AdviceAdapter {
         this.methodLocalVariableInfo = methodLocalVariableInfo;
         this.classOwner=null;
         this.hasAssertions = false;
+        this.methodDesc = descriptor;
     }
+//
+//    @Override
+//    public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
+//        System.out.println("haah"+" "+name+" "+descriptor+" "+signature+" "+start+" "+end+" "+index);
+//        super.visitLocalVariable(name, descriptor, signature, start, end, index);
+//    }
 
     @Override
-    protected void onMethodEnter() {
-
+    public void visitCode(){
         if (this.isTestAnnotationPresent) {
-             this.cleanObjectarray();
-             String content = "recognize an @Test Annotation ";
-             this.mv.visitLdcInsn(content);
-             //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                     "printString", "(Ljava/lang/String;)V", false);
-             if(Utils.calculateParaNum(this.methodDesc)!=0){
-                 content = "parameterized/multilocale test: run at ";
-                 this.mv.visitLdcInsn(content);
-                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                         "printString", "(Ljava/lang/String;)V", false);
-             }
-             content = "Start executing outer test method: ";
-             if (this.isDisabled == true)
-                 content = content +"DisabledMethod";
-             else
-                 content = content +this.methodName;
-             content = content+" TestClassName: "+this.testClassName+" ";
-             this.mv.visitLdcInsn(content);
-             //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                     "printString", "(Ljava/lang/String;)V", false);
-         }
-        super.onMethodEnter();
+            this.cleanObjectarray();
+            String content = "recognize an @Test Annotation ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+            if(Utils.calculateParaNum(this.methodDesc)!=0){
+                content = "parameterized/multilocale test: run at ";
+                this.mv.visitLdcInsn(content);
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }
+            content = "Start executing outer test method: ";
+            if (this.isDisabled == true)
+                content = content +"DisabledMethod";
+            else
+                content = content +this.methodName;
+            content = content+" TestClassName: "+this.testClassName+" ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }
+        super.visitCode();
+
     }
 
     @Override
-    protected void onMethodExit(int opcode) {
-         if (this.isTestAnnotationPresent) {
-             if (this.hasAssertions==false){
-                 Utils.appendLogAt("No_Assertions.txt",new String[]{testClassName+" "+methodName});
-             }
-             this.cleanObjectarray();
-             String content = "No crash or assertion failure! Finish executing outer test method: ";
-             // .append(testmethodname)
-             if (this.isDisabled == true)
-                 content = content+ "DisabledMethod";
-             else
-                 content = content+this.methodName;
-             content = content +" TestClassName: "+this.testClassName+ " ";
+    public void visitInsn(int opcode) {
+        //whenever we find a RETURN and if its method is annotated with @Test, insert something
+        if(this.isTestAnnotationPresent) {
+            switch (opcode) {
+                case Opcodes.IRETURN:
+                case Opcodes.FRETURN:
+                case Opcodes.ARETURN:
+                case Opcodes.LRETURN:
+                case Opcodes.DRETURN:
+                case Opcodes.RETURN:
+                    if (this.isTestAnnotationPresent) {
+                        if (this.hasAssertions==false){
+                            Utils.appendLogAt("No_Assertions.txt",new String[]{testClassName+" "+methodName});
+                        }
+                        this.cleanObjectarray();
+                        String content = "No crash or assertion failure! Finish executing outer test method: ";
+                        // .append(testmethodname)
+                        if (this.isDisabled == true)
+                            content = content+ "DisabledMethod";
+                        else
+                            content = content+this.methodName;
+                        content = content +" TestClassName: "+this.testClassName+ " ";
 
-             this.mv.visitLdcInsn(content);
-             //invoke InstrumentationUtils.printString(content)
-             this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                     "printString", "(Ljava/lang/String;)V", false);
-         }
-         super.onMethodExit(opcode);
+                        this.mv.visitLdcInsn(content);
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }
+                    break;
+                default: // do nothing
+            }
+        }
+        super.visitInsn(opcode);
     }
-
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         //System.out.println("visitAnnotation works");
@@ -179,9 +203,15 @@ public class AssertVisitor extends AdviceAdapter {
             this.mv.visitVarInsn(Opcodes.ALOAD,0);
             this.mv.visitFieldInsn(Opcodes.GETFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
             //iconst_x: get the xth local variable
-            this.mv.visitLdcInsn(index);
+//            this.mv.visitLdcInsn(index);
+
+//            this.mv.visitVarInsn(Opcodes.IConst);
+//            this.mv.visitVarInsn(Opcodes.ICONST_M1,0);
             //load the local variable to be stored
+            this.visitIntInsn(Opcodes.BIPUSH,index);
+//            this.visitVarInsn(Opcodes.BIPUSH,index);
             this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
+            System.out.println("yes"+v.varIndex+v.name+v.loadOpcodeName()+v.loadOpcode());
             // transfrom some primitive types as objects
             switch(v.loadOpcode()){
                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21
@@ -279,5 +309,5 @@ public class AssertVisitor extends AdviceAdapter {
         this.mv.visitFieldInsn(Opcodes.PUTFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
 
     }
-    
+
 }
