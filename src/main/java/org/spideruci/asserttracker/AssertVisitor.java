@@ -173,7 +173,8 @@ public class AssertVisitor extends MethodVisitor {
     }
 
     protected void insertXstreamProbe(){
-        if (methodLocalVariableInfo.size()==0){
+
+        if (methodLocalVariableInfo.size()==0 || XStreamBL.testsBlacklist.contains(this.methodName+" "+this.testClassName)){
             return;
         }
 
@@ -211,7 +212,6 @@ public class AssertVisitor extends MethodVisitor {
             this.visitIntInsn(Opcodes.BIPUSH,index);
 //            this.visitVarInsn(Opcodes.BIPUSH,index);
             this.mv.visitVarInsn(v.loadOpcode(),v.varIndex);//variables.get(0).index
-            System.out.println("yes"+v.varIndex+v.name+v.loadOpcodeName()+v.loadOpcode());
             // transfrom some primitive types as objects
             switch(v.loadOpcode()){
                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;    21

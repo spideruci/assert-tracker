@@ -63,11 +63,7 @@ public class AssertTrackingClassVisitor extends ClassVisitor {
         this.testClassName = name.replace("/",".");
         //instrument a new object array field
         if(this.isTestClass){
-//            System.out.println("hahahahah");
-//            for(String n:interfaces){
-//                System.out.println("niubi"+n);
-//            }
-//            System.out.println(name);
+//            this.visitField(access, "_assertions_hit_count","Ljava/lang/Integer;",null,null);
             this.visitField(access,"_ObjectArray","[Ljava/lang/Object;",null, (Object)null);
         }
         super.visit(version, access, name, signature, superName, interfaces);
