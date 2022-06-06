@@ -28,7 +28,8 @@ public class AssertTracker
             return;
         }
 
-        File xmlDirectory = new File("xmlOutput");
+        String base_loc = "target";
+        File xmlDirectory = new File( base_loc+File.separator+"xmlOutput");
         if (xmlDirectory.exists()){
             FileUtils.forceDelete(xmlDirectory);
         }
