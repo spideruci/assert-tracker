@@ -7,13 +7,14 @@ import java.io.*;
 
 
 public class InstrumentationUtils {
+    public static String file_base = "target";
 
     public static void dumpObjectUsingXml(Object o,String name,String testClassName, String testMethodName){
         //Dump xml output to xmlOutput/testClassName/testMethodName/variableName nanotime.xml
 
         String base = "xmloutput"+File.separator+testClassName+File.separator+testMethodName;
         try{
-            File directory = new File(base);
+            File directory = new File(file_base+File.separator+base);
             directory.mkdirs();
         }catch(Exception e){
             System.err.println("failed to make directory for"+testClassName+" "+testMethodName);
@@ -22,13 +23,13 @@ public class InstrumentationUtils {
             XStream12FieldKeySorter sorter = new XStream12FieldKeySorter();
             XStream xstream = new XStream(new SunUnsafeReflectionProvider(new FieldDictionary(sorter)));
             xstream.setMode(XStream.ID_REFERENCES);
-            String path = base+File.separator+name+" "+System.nanoTime()+".xml";
+            String path = file_base+File.separator+base+File.separator+name+" "+System.nanoTime()+".xml";
             FileWriter fw = new FileWriter(path);
             xstream.toXML(o,fw);
         }catch(Exception e){
             System.err.println("there is something wrong when using XStream at "+System.nanoTime()+" for "
                 +base+File.separator+name+" "+System.nanoTime());
-            try (FileWriter f = new FileWriter("Non-Serializable.txt", true);
+            try (FileWriter f = new FileWriter(file_base+File.separator+"Non-Serializable.txt", true);
                  BufferedWriter b = new BufferedWriter(f);
                  PrintWriter p = new PrintWriter(b);)
             {
