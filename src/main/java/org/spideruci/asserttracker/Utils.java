@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,11 +32,11 @@ public class Utils {
     }
 
     public static Boolean isAssertionStatement(String methodName) {
-        final String[] assertionNames = new String[]{"assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals"};
-        for(String s : assertionNames){
-            if (s.equalsIgnoreCase(methodName)) {
-                return true;
-            }
+        final Set<String> assertionNames = new HashSet<String>(Arrays.asList("assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull",
+                "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals",
+                "assertIterableEquals","assertLinesMatch","assertTimeout","assertTimeoutpreemptively","fail"));
+        if (assertionNames.contains(methodName)){
+            return true;
         }
         return false;
     }
