@@ -28,7 +28,7 @@ public class ZipFileManager {
         if(matcher.find()){
             //the path looks like this       jar:file:/Users/勤奋的黑痴/OneDrive/Java/test
             zipPath ="jar:file:"+currentPath.substring(matcher.end()).replace("\\","/")
-                    +"/"+"xmlOutput.zip";
+                    +"/target/"+"xmlOutput.zip";
         }
 //        deleteFile("xmloutput.zip");
         URI zip_loc = URI.create(zipPath);
@@ -41,7 +41,7 @@ public class ZipFileManager {
         int count= 0;
         Thread.sleep(30000);//wait for the first output xml file
         while(true){
-            File file = new File("xmloutput");
+            File file = new File("target/xmloutput");
             List<Path> xmlFiles = null;
             try (Stream<Path> fileStream = Files.walk(file.toPath())) {
                 xmlFiles = fileStream.filter(Files::isRegularFile)
