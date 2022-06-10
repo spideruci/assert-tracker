@@ -1,4 +1,9 @@
 # Assert Tracker
+###
+Google doc
+
+https://docs.google.com/document/d/1kBer3w7G_Ce7NDP2o3dbk03vXzMGOHFPZbHYnF3ARAw/edit#heading=h.do6mxjucpu1a
+
 ### Running instructions
 For running this project's test cases:
 
