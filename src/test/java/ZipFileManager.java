@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 public class ZipFileManager {
+    public static List<Path> xmlFiles = null;
     /* Define ZIP File System Properies in HashMap */
     public static void main(String[] args) throws Exception {
         Map<String, String> zip_properties = new HashMap<>();
@@ -40,14 +40,17 @@ public class ZipFileManager {
         zip_properties.put("create","false");
         int count= 0;
         Thread.sleep(30000);//wait for the first output xml file
+
+
         while(true){
             File file = new File("target/xmloutput");
-            List<Path> xmlFiles = null;
-            try (Stream<Path> fileStream = Files.walk(file.toPath())) {
-                xmlFiles = fileStream.filter(Files::isRegularFile)
-                        .filter(p -> p.toFile().getName().endsWith(".xml"))
-                        .collect(Collectors.toList());
-            }
+            getFiles(file);
+
+//            try (Stream<Path> fileStream = Files.walk(file.toPath())) {
+//                xmlFiles = fileStream.filter(Files::isRegularFile)
+//                        .filter(p -> p.toFile().getName().endsWith(".xml"))
+//                        .collect(Collectors.toList());
+//            }
             if (xmlFiles.size()==0){
                 return;
             }
@@ -89,5 +92,15 @@ public class ZipFileManager {
             aFile.delete();
         }
     }
-
+    public static void getFiles(File file) {
+        if (file.isDirectory()) {
+            for(File f:file.listFiles()){
+                getFiles(f);
+            }
+        } else {
+            if(file.getName().endsWith(".xml")){
+                xmlFiles.add(file.toPath());
+            }
+        }
+    }
 }
