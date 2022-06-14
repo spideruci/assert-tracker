@@ -12,10 +12,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
 import org.apache.commons.io.FileUtils;
+
+import static org.objectweb.asm.Opcodes.*;
+
 /**
  * Hello world!
  *
@@ -40,6 +41,36 @@ public class AssertTracker
             System.out.println(errorMessage);
             new RuntimeException(errorMessage);
         }
+
+        //instrument a class
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(V1_8, ACC_PUBLIC, "AssertDumper/LocalVariableDumper", null, "java/lang/Object",null);
+        cw.visitField(ACC_PUBLIC+ACC_STATIC, "_ObjectArray", "[Ljava/lang/Object;",
+                null, (Object) null).visitEnd();
+        cw.visitSource("AssertDumper/LocalVariableDumper.java", null);
+
+        {
+            MethodVisitor mv;
+            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            Label l0 = new Label();
+            mv.visitLabel(l0);
+            mv.visitLineNumber(1, l0);
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+            mv.visitInsn(RETURN);
+            Label l1 = new Label();
+            mv.visitLabel(l1);
+            mv.visitLocalVariable("this", "LAssertDumper/LocalVariableDumper;", null, l0, l1, 0);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+        cw.visitEnd();
+        byte[] code = cw.toByteArray();
+        new File("target/classes/AssertDumper").mkdirs();
+        PrintStream byteStream = new PrintStream("target/classes/AssertDumper/LocalVariableDumper.class");
+        byteStream.write(code);
+        byteStream.close();
 
         if (file.isDirectory()) {
             // do nothing
@@ -130,7 +161,7 @@ public class AssertTracker
     }
 
     public byte[] fetchIntrumentedCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) {
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);//COMPUTE_MAXS
         classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer,localVariableInfo), ClassReader.EXPAND_FRAMES);
                 return writer.toByteArray();
                 }

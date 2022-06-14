@@ -13,11 +13,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.objectweb.asm.commons.AdviceAdapter;
 
+import static org.objectweb.asm.Opcodes.*;
+
 public class AssertVisitor extends MethodVisitor {
 
     final public String methodName;
     public Boolean isTestAnnotationPresent;
     boolean isTestClass;
+    boolean isBeforeEachPresent;
+    boolean isAfterEachPresent;
+
+    boolean isBeforeAllPresent;
+    boolean isAfterAllPresent;
     String testClassName;
     boolean isDisabled;
     ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo;
@@ -26,11 +33,17 @@ public class AssertVisitor extends MethodVisitor {
 
     public String methodDesc;
 
+    public boolean initPresent;
+    public boolean isJunitTestcase;
+    public boolean isReturnVoid;
+    public boolean beforePresent;
+    public boolean afterPresent;
 
+    public boolean isStatic;
 
     public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
-                         String testClassName) {
+                         String testClassName, Boolean isJunitTestcase) {
         super(api, methodWriter);
 //        super(api, methodWriter, access, name, descriptor);
         this.methodName = name;
@@ -42,6 +55,19 @@ public class AssertVisitor extends MethodVisitor {
         this.classOwner=null;
         this.hasAssertions = false;
         this.methodDesc = descriptor;
+        this.isBeforeEachPresent=false;
+        this.isAfterEachPresent = false;
+        this.isReturnVoid = descriptor.endsWith("()V");
+        this.isJunitTestcase = isJunitTestcase && isReturnVoid && (access==1 ||access==17);
+        this.isStatic = access==ACC_PUBLIC+ACC_STATIC ||access==ACC_PUBLIC+ACC_STATIC+ACC_FINAL||access==ACC_PRIVATE+ACC_STATIC+ACC_FINAL
+                        || access==ACC_PRIVATE+ACC_STATIC;
+        initPresent = false;
+        beforePresent = false;
+        afterPresent = false;
+
+        if(name.equals("<init>")){
+            initPresent=true;
+        }
     }
 //
 //    @Override
@@ -52,7 +78,37 @@ public class AssertVisitor extends MethodVisitor {
 
     @Override
     public void visitCode(){
-        if (this.isTestAnnotationPresent) {
+        if (this.isBeforeEachPresent){
+            String content = "enter BeforeEach method ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }else if (this.isAfterEachPresent){
+            String content = "enter AfterEach method ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }else if (this.isBeforeAllPresent){
+            String content = "enter BeforeAll method ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }else if (this.isAfterAllPresent){
+            String content = "enter AfterAll method ";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }else if(this.initPresent && isTestClass){
+            String content = "Enter Junit4 Constructor";
+            this.mv.visitLdcInsn(content);
+            //invoke InstrumentationUtils.printString(content)
+            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                    "printString", "(Ljava/lang/String;)V", false);
+        }else if (this.isTestAnnotationPresent || isJunitTestcase) {
             this.cleanObjectarray();
             String content = "recognize an @Test Annotation ";
             this.mv.visitLdcInsn(content);
@@ -82,8 +138,10 @@ public class AssertVisitor extends MethodVisitor {
 
     @Override
     public void visitInsn(int opcode) {
-        //whenever we find a RETURN and if its method is annotated with @Test, insert something
-        if(this.isTestAnnotationPresent) {
+        if(!methodName.equals("access$000") &&
+                ( isJunitTestcase||isTestAnnotationPresent || isBeforeEachPresent ||
+                isBeforeAllPresent || isAfterEachPresent || isAfterAllPresent ||
+                (initPresent&& isTestClass) || beforePresent||afterPresent)){
             switch (opcode) {
                 case Opcodes.IRETURN:
                 case Opcodes.FRETURN:
@@ -91,10 +149,7 @@ public class AssertVisitor extends MethodVisitor {
                 case Opcodes.LRETURN:
                 case Opcodes.DRETURN:
                 case Opcodes.RETURN:
-                    if (this.isTestAnnotationPresent) {
-                        if (this.hasAssertions==false){
-                            Utils.appendLogAt("No_Assertions.txt",new String[]{testClassName+" "+methodName});
-                        }
+                    if(isTestAnnotationPresent || isJunitTestcase){
                         this.cleanObjectarray();
                         String content = "No crash or assertion failure! Finish executing outer test method: ";
                         // .append(testmethodname)
@@ -108,11 +163,78 @@ public class AssertVisitor extends MethodVisitor {
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
+                    }else if(initPresent && isTestClass){
+                        this.mv.visitLdcInsn("exit Constructor Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isBeforeEachPresent){
+                        this.mv.visitLdcInsn("exit BeforeEach Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isAfterEachPresent){
+                        this.mv.visitLdcInsn("exit AfterEach Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isBeforeAllPresent){
+                        this.mv.visitLdcInsn("exit BeforeAll Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isAfterAllPresent){
+                        this.mv.visitLdcInsn("exit AfterAll Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(beforePresent){
+                        this.mv.visitLdcInsn("exit Before Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(afterPresent){
+                        this.mv.visitLdcInsn("exit After Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
                     }
                     break;
                 default: // do nothing
             }
         }
+
+//        //whenever we find a RETURN and if its method is annotated with @Test, insert something
+//        if(this.isTestAnnotationPresent) {
+//            switch (opcode) {
+//                case Opcodes.IRETURN:
+//                case Opcodes.FRETURN:
+//                case Opcodes.ARETURN:
+//                case Opcodes.LRETURN:
+//                case Opcodes.DRETURN:
+//                case Opcodes.RETURN:
+//                    if (this.isTestAnnotationPresent) {
+//                        if (this.hasAssertions==false){
+//                            Utils.appendLogAt("target/No_Assertions.txt",new String[]{testClassName+" "+methodName});
+//                        }
+//                        this.cleanObjectarray();
+//                        String content = "No crash or assertion failure! Finish executing outer test method: ";
+//                        // .append(testmethodname)
+//                        if (this.isDisabled == true)
+//                            content = content+ "DisabledMethod";
+//                        else
+//                            content = content+this.methodName;
+//                        content = content +" TestClassName: "+this.testClassName+ " ";
+//
+//                        this.mv.visitLdcInsn(content);
+//                        //invoke InstrumentationUtils.printString(content)
+//                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+//                                "printString", "(Ljava/lang/String;)V", false);
+//                    }
+//                    break;
+//                default: // do nothing
+//            }
+//        }
         super.visitInsn(opcode);
     }
     @Override
@@ -122,13 +244,30 @@ public class AssertVisitor extends MethodVisitor {
         //@org.junit.jupiter.api.Test() is not enough.
         //may be @MultilocaleTest?
 
+        if(desc.endsWith("BeforeEach;")){
+            isBeforeEachPresent = true;
+        }
+        if(desc.endsWith("AfterEach;")){
+            isAfterEachPresent = true;
+        }
         if(desc.endsWith("Test;")){
-            //System.out.println("detect @Test");
             isTestAnnotationPresent = true;
+        }
+        if(desc.endsWith("BeforeAll;")){
+            isBeforeAllPresent = true;
+        }
+        if(desc.endsWith("AfterAll;")){
+            isAfterAllPresent = true;
         }
         if(desc.endsWith("Disabled;")){
             //System.out.println("detect @Disabled");
             this.isDisabled = true;
+        }
+        if(desc.endsWith("After;")){
+            afterPresent=true;
+        }
+        if(desc.endsWith("Before;")){
+            beforePresent=true;
         }
 
         return super.visitAnnotation(desc, visible);
@@ -140,36 +279,48 @@ public class AssertVisitor extends MethodVisitor {
 
         Boolean isAssert = Utils.isAssertionStatement(name);
 
-        if (isAssert && isTestAnnotationPresent) {
-            this.hasAssertions = true;
-            // only consider the first layer of assertion statements, i.e., the assertion statements in the test case method labeled with "@Test" annotation
-            // sometimes, public test case method invokes private method where it holds some assertion statements, we do not do instrumentation
-            // since they usually accept some parameters from the outer method. If those parameters are tainted, they would be tainted to the private method
+//        if (isAssert && isTestAnnotationPresent) {
+//            this.hasAssertions = true;
+//            // only consider the first layer of assertion statements, i.e., the assertion statements in the test case method labeled with "@Test" annotation
+//            // sometimes, public test case method invokes private method where it holds some assertion statements, we do not do instrumentation
+//            // since they usually accept some parameters from the outer method. If those parameters are tainted, they would be tainted to the private method
+//
+//            String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
+//            System.out.println(message);
+//            cleanObjectarray();
+//            insertPrintingProbe(message);
+//            if(this.isTestClass){
+//                insertXstreamProbe();
+//            }
+//        }else if(isAssert){
+//            String message = "\t + nested method Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
+//            System.out.println(message);
+//            insertPrintingProbe(message);
+//        }
 
+        if(isAssert ){
             String message = "\t + Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
             System.out.println(message);
             cleanObjectarray();
             insertPrintingProbe(message);
-            if(this.isTestClass){
-                insertXstreamProbe();
-            }
-        }else if(isAssert){
-            String message = "\t + nested method Compiled at " + Instant.now().toEpochMilli() + " start:" + this.methodName + " " + name + " ";
-            System.out.println(message);
-            insertPrintingProbe(message);
+            insertXstreamProbe();
         }
-
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-        if (isAssert && isTestAnnotationPresent) {
+        if(isAssert){
             String message = "\t end:" + this.methodName + " " + name;
             System.out.println(message);
             insertPrintingProbe(message);
-        }else if(isAssert){
-            String message = "\t nested method end:" + this.methodName + " " + name;
-            System.out.println(message);
-            insertPrintingProbe(message);
         }
+//        if (isAssert && isTestAnnotationPresent) {
+//            String message = "\t end:" + this.methodName + " " + name;
+//            System.out.println(message);
+//            insertPrintingProbe(message);
+//        }else if(isAssert){
+//            String message = "\t nested method end:" + this.methodName + " " + name;
+//            System.out.println(message);
+//            insertPrintingProbe(message);
+//        }
     }
 
     protected void insertXstreamProbe(){
@@ -188,21 +339,23 @@ public class AssertVisitor extends MethodVisitor {
         // make an object array
 
         //aload 0: load "this"
-        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+//        this.mv.visitVarInsn(Opcodes.ALOAD,0);
         //iconst_x: get the size of the object array
         this.mv.visitLdcInsn(localVariables.size());
         //anewarray: create a new array
         this.mv.visitTypeInsn(Opcodes.ANEWARRAY, Type.getInternalName(Object.class));
         //putfield
-        this.mv.visitFieldInsn(Opcodes.PUTFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+        this.mv.visitFieldInsn(Opcodes.PUTSTATIC,"AssertDumper/LocalVariableDumper","_ObjectArray","[Ljava/lang/Object;");
 
         //stuff local variables into this object array
         int index = 0;
         String variables_name = "";
         for(LocalVariable v: localVariables) {
             //aload 0: load "this"
-            this.mv.visitVarInsn(Opcodes.ALOAD,0);
-            this.mv.visitFieldInsn(Opcodes.GETFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+//            if(!isStatic){
+//                this.mv.visitVarInsn(Opcodes.ALOAD,0);
+//            }
+            this.mv.visitFieldInsn(Opcodes.GETSTATIC,"AssertDumper/LocalVariableDumper","_ObjectArray","[Ljava/lang/Object;");
             //iconst_x: get the xth local variable
 //            this.mv.visitLdcInsn(index);
 
@@ -236,8 +389,8 @@ public class AssertVisitor extends MethodVisitor {
         }
 
         //get the object array object
-        this.mv.visitVarInsn(Opcodes.ALOAD,0);
-        this.mv.visitFieldInsn(Opcodes.GETFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+//        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+        this.mv.visitFieldInsn(Opcodes.GETSTATIC,"AssertDumper/LocalVariableDumper","_ObjectArray","[Ljava/lang/Object;");
 
         //dump the object array using XStream
         this.mv.visitLdcInsn(variables_name);
@@ -286,6 +439,7 @@ public class AssertVisitor extends MethodVisitor {
         methodLocalVariableInfo.remove(0);
     }
     protected void insertPrintingProbe(String str) {
+
         if (this.mv == null) {
             return;
         }
@@ -300,13 +454,13 @@ public class AssertVisitor extends MethodVisitor {
     protected void cleanObjectarray(){
 
         //load "this"
-        this.mv.visitVarInsn(Opcodes.ALOAD,0);
+//        this.mv.visitVarInsn(Opcodes.ALOAD,0);
 //        aload_0
 //        34: aconst_null
 //        35: putfield      #89                 // Field _ObjectArray:[Ljava/lang/Object;
         this.mv.visitInsn(Opcodes.ACONST_NULL);
 //        this.mv.visitLdcInsn(Opcodes.ACONST_NULL);
-        this.mv.visitFieldInsn(Opcodes.PUTFIELD,this.testClassName.replace(".","/"),"_ObjectArray","[Ljava/lang/Object;");
+        this.mv.visitFieldInsn(Opcodes.PUTSTATIC,"AssertDumper/LocalVariableDumper","_ObjectArray","[Ljava/lang/Object;");
 
     }
 
