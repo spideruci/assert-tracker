@@ -41,6 +41,8 @@ public class AssertVisitor extends MethodVisitor {
 
     public boolean isStatic;
 
+    public boolean isSetUpTearDown;
+
     public AssertVisitor(int api, MethodVisitor methodWriter, int access, String name, String descriptor,
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
                          String testClassName, Boolean isJunitTestcase) {
@@ -58,7 +60,17 @@ public class AssertVisitor extends MethodVisitor {
         this.isBeforeEachPresent=false;
         this.isAfterEachPresent = false;
         this.isReturnVoid = descriptor.endsWith("()V");
-        this.isJunitTestcase = isJunitTestcase && isReturnVoid && (access==1 ||access==17);
+        //protected/public+(final)+setup/tearDown
+        this.isSetUpTearDown=false;
+        if(this.methodName.equals("setUp") || this.methodName.equals("tearDown")){
+            if(access==ACC_PUBLIC || access==ACC_PUBLIC+ACC_FINAL ||access==ACC_PROTECTED||access==ACC_PROTECTED+ACC_FINAL){
+                this.isSetUpTearDown=true;
+            }
+        }
+        this.isJunitTestcase = isJunitTestcase && isReturnVoid && (access==1 ||access==17) && methodName.startsWith("test");
+        this.isJunitTestcase = this.isJunitTestcase || isSetUpTearDown;
+        //this is only for junit4
+//        this.isJunitTestcase = isJunitTestcase && methodName.startsWith("test") && (access==ACC_PUBLIC+ACC_FINAL || access==ACC_PUBLIC);
         this.isStatic = access==ACC_PUBLIC+ACC_STATIC ||access==ACC_PUBLIC+ACC_STATIC+ACC_FINAL||access==ACC_PRIVATE+ACC_STATIC+ACC_FINAL
                         || access==ACC_PRIVATE+ACC_STATIC;
         initPresent = false;
@@ -78,60 +90,75 @@ public class AssertVisitor extends MethodVisitor {
 
     @Override
     public void visitCode(){
-        if (this.isBeforeEachPresent){
-            String content = "enter BeforeEach method ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-        }else if (this.isAfterEachPresent){
-            String content = "enter AfterEach method ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-        }else if (this.isBeforeAllPresent){
-            String content = "enter BeforeAll method ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-        }else if (this.isAfterAllPresent){
-            String content = "enter AfterAll method ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-        }else if(this.initPresent && isTestClass){
-            String content = "Enter Junit4 Constructor";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-        }else if (this.isTestAnnotationPresent || isJunitTestcase) {
-            this.cleanObjectarray();
-            String content = "recognize an @Test Annotation ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
-            if(Utils.calculateParaNum(this.methodDesc)!=0){
-                content = "parameterized/multilocale test: run at ";
+        if(!methodName.equals("access$000")){
+            if(this.beforePresent){
+                String content = "enter Before method ";
                 this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if(this.afterPresent){
+                String content = "enter After method ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if (this.isBeforeEachPresent){
+                String content = "enter BeforeEach method ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if (this.isAfterEachPresent){
+                String content = "enter AfterEach method ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if (this.isBeforeAllPresent){
+                String content = "enter BeforeAll method ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if (this.isAfterAllPresent){
+                String content = "enter AfterAll method ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if(this.initPresent && isTestClass){
+                String content = "Enter Junit4 Constructor ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+            }else if ((this.isTestAnnotationPresent || isJunitTestcase)) {
+                this.cleanObjectarray();
+                String content = "recognize an @Test Annotation ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
+                if(Utils.calculateParaNum(this.methodDesc)!=0){
+                    content = "parameterized/multilocale test: run at ";
+                    this.mv.visitLdcInsn(content);
+                    this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                            "printString", "(Ljava/lang/String;)V", false);
+                }
+                content = "Start executing outer test method: ";
+                if (this.isDisabled == true)
+                    content = content +"DisabledMethod";
+                else
+                    content = content +this.methodName;
+                content = content+" TestClassName: "+this.testClassName+" ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                         "printString", "(Ljava/lang/String;)V", false);
             }
-            content = "Start executing outer test method: ";
-            if (this.isDisabled == true)
-                content = content +"DisabledMethod";
-            else
-                content = content +this.methodName;
-            content = content+" TestClassName: "+this.testClassName+" ";
-            this.mv.visitLdcInsn(content);
-            //invoke InstrumentationUtils.printString(content)
-            this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                    "printString", "(Ljava/lang/String;)V", false);
         }
+
         super.visitCode();
 
     }
@@ -149,7 +176,24 @@ public class AssertVisitor extends MethodVisitor {
                 case Opcodes.LRETURN:
                 case Opcodes.DRETURN:
                 case Opcodes.RETURN:
-                    if(isTestAnnotationPresent || isJunitTestcase){
+
+                    //before and after comes before testcase methods
+                    if(beforePresent){
+                        this.mv.visitLdcInsn("exit Before Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(afterPresent){
+                        this.mv.visitLdcInsn("exit After Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(initPresent && isTestClass) {
+                        this.mv.visitLdcInsn("exit Constructor Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isTestAnnotationPresent || isJunitTestcase){
                         this.cleanObjectarray();
                         String content = "No crash or assertion failure! Finish executing outer test method: ";
                         // .append(testmethodname)
@@ -160,11 +204,6 @@ public class AssertVisitor extends MethodVisitor {
                         content = content +" TestClassName: "+this.testClassName+ " ";
 
                         this.mv.visitLdcInsn(content);
-                        //invoke InstrumentationUtils.printString(content)
-                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                                "printString", "(Ljava/lang/String;)V", false);
-                    }else if(initPresent && isTestClass){
-                        this.mv.visitLdcInsn("exit Constructor Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
@@ -185,16 +224,6 @@ public class AssertVisitor extends MethodVisitor {
                                 "printString", "(Ljava/lang/String;)V", false);
                     }else if(isAfterAllPresent){
                         this.mv.visitLdcInsn("exit AfterAll Method ");
-                        //invoke InstrumentationUtils.printString(content)
-                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                                "printString", "(Ljava/lang/String;)V", false);
-                    }else if(beforePresent){
-                        this.mv.visitLdcInsn("exit Before Method ");
-                        //invoke InstrumentationUtils.printString(content)
-                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
-                                "printString", "(Ljava/lang/String;)V", false);
-                    }else if(afterPresent){
-                        this.mv.visitLdcInsn("exit After Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
