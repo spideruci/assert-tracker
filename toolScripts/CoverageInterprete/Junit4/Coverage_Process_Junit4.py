@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[137]:
+# In[9]:
 
 
 import re
@@ -22,26 +22,35 @@ import bisect
 from lxml import etree
 
 
-# In[128]:
+# In[10]:
 
 
 base1 = "3-coverage-scan1"
 base2 = "3-coverage-scan2"
 base3 = "3-coverage-scan3"
 base4 = "3-coverage-scan4"
-
+zipfilepath = 'target/xmlOutput.zip'
 largest_file_size=100000000
 
 
-# In[81]:
+# In[11]:
+
+
+def Lines(base):
+    with open(base+"/target/test_info.txt", encoding='utf-8',errors = "ignore") as inf:
+        for line in inf:
+            yield line
+
+
+# In[12]:
 
 
 def init_process(base):
     zipfilepath = 'target/xmlOutput.zip'
     early_time=None
     late_time=None
-    with open(base+"/target/test_info.txt", encoding='utf-8',errors = "ignore") as inf:
-        Lines = inf.readlines()
+#     with open(base+"/target/test_info.txt", encoding='utf-8',errors = "ignore") as inf:
+#         Lines = inf.readlines()
     
     normal_state={}
     current_test_class = None
@@ -52,7 +61,7 @@ def init_process(base):
     count=0
     prev=[False,False,False,False,False,False]
     test_case_queue=[]
-    for line in Lines:
+    for line in Lines(base):
 
         before = len(re.findall("enter Before method",line))!=0
         after = len(re.findall("enter After method",line))!=0
@@ -144,14 +153,14 @@ def init_process(base):
     return normal_state
 
 
-# In[88]:
+# In[13]:
 
 
 def match_file(base):
     normal_state = init_process(base)
     zips = zipfile.ZipFile(base+"/"+zipfilepath)
     sorted_filelist = sorted(zips.filelist, key=lambda file: int(file.filename.split(" ")[-1][:-4]))
-    zips_time=[f.filename.split(" ")[-1][:-4] for f in sorted_filelist]
+    zips_time=[int(f.filename.split(" ")[-1][:-4]) for f in sorted_filelist]
     for class_name,class_content in normal_state.items():
         for method_name, method_content in class_content.items():
             for index,test_case in enumerate(method_content):
@@ -168,30 +177,30 @@ def match_file(base):
                 test_case["local_variables"]=[]
 
                 #match time duration1
-                lower_bound = constructor_range[0]
-                upper_bound = constructor_range[1]
+                lower_bound = int(constructor_range[0])
+                upper_bound = int(constructor_range[1])
                 lower_bound_i = bisect.bisect_left(zips_time, lower_bound)
                 upper_bound_i = bisect.bisect_right(zips_time, upper_bound, lo=lower_bound_i)
 
                 for i in range(lower_bound_i,upper_bound_i):
-                    test_case["local_variables"].append(zips.filelist[i])
+                    test_case["local_variables"].append(sorted_filelist[i].filename)
 
                 #match time duration2
-                lower_bound = main_range[0]
-                upper_bound = main_range[1]
+                lower_bound = int(main_range[0])
+                upper_bound = int(main_range[1])
                 lower_bound_i = bisect.bisect_left(zips_time, lower_bound)
                 upper_bound_i = bisect.bisect_right(zips_time, upper_bound, lo=lower_bound_i)
 
                 if(upper_bound_i-lower_bound_i>100):
                     print(test_case)
                 for i in range(lower_bound_i,upper_bound_i):
-                    test_case["local_variables"].append(zips.filelist[i].filename)
+                    test_case["local_variables"].append(sorted_filelist[i].filename)
     return normal_state
     
             
 
 
-# In[92]:
+# In[14]:
 
 
 print("first coverage scan: "+ "="*100)
@@ -199,7 +208,7 @@ zips1 = zipfile.ZipFile(base1+"/"+zipfilepath)
 normal_state1 = match_file(base1)
 
 
-# In[93]:
+# In[15]:
 
 
 print("Second coverage scan: "+ "="*100)
@@ -207,7 +216,7 @@ zips2 = zipfile.ZipFile(base2+"/"+zipfilepath)
 normal_state2 = match_file(base2)
 
 
-# In[94]:
+# In[16]:
 
 
 print("Third coverage scan: "+ "="*100)
@@ -215,7 +224,7 @@ zips3 = zipfile.ZipFile(base3+"/"+zipfilepath)
 normal_state3 = match_file(base3)
 
 
-# In[126]:
+# In[17]:
 
 
 print("Fourth coverage scan: "+ "="*100)
@@ -223,7 +232,7 @@ zips4 = zipfile.ZipFile(base4+"/"+zipfilepath)
 normal_state4 = match_file(base4)
 
 
-# In[142]:
+# In[18]:
 
 
 def get_graph_from_root(root):
@@ -253,7 +262,7 @@ def get_graph_from_root(root):
     return G
 
 
-# In[110]:
+# In[19]:
 
 
 def get_state_files(test_case):
@@ -261,17 +270,17 @@ def get_state_files(test_case):
         yield file_name
 
 
-# In[164]:
+# In[21]:
 
 
 comparison_info = {}
 
 zips=[zips1,zips2,zips3,zips4]
-for test_class,class_content in normal_state1.items():
+for test_class,class_content in normal_state3.items():
 
     for test_method, method_content in class_content.items():
-        
         num = len(normal_state1)
+        
         test_cases1 = normal_state1[test_class][test_method]
         test_cases2 = normal_state2[test_class][test_method]
         test_cases3 = normal_state3[test_class][test_method]
@@ -339,9 +348,64 @@ for test_class,class_content in normal_state1.items():
                                     comparison_info[test_class+" "+test_method+" "+str(i)][state_index].add(element4.tag)
 
 
-# In[166]:
+# In[22]:
 
 
 with open("comparison_info",'wb') as f:
     pickle.dump(comparison_info,f)
+
+
+# In[23]:
+
+
+with open("normal_state","wb") as f:
+    pickle.dump(normal_state1,f)
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
