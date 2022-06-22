@@ -30,7 +30,7 @@ public class Utils {
         final Set<String> assertionNames = new HashSet<String>(Arrays.asList("assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull",
                 "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "assertThrows","assertNotEquals",
                 "assertIterableEquals","assertLinesMatch","assertTimeout","assertTimeoutpreemptively","fail"));
-        if (assertionNames.contains(methodName)){
+        if (assertionNames.contains(methodName)  || methodName.startsWith("assertThat")){
             return true;
         }
         return false;
