@@ -6,7 +6,7 @@ import sys
 import re
 if __name__ == "__main__":
     reportLines =[]
-    file_name = sys.argv[1]
+    file_name = "2-assertion_scan/target/assertions.txt"
     with open(file_name,'r') as f:
         Lines = f.readlines();
     prev_state = "start"
