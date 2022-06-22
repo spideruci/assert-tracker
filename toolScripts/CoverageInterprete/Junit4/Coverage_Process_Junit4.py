@@ -336,10 +336,11 @@ for test_class,class_content in normal_state3.items():
                                 if (not element1.tag==element2.tag==element3.tag==element4.tag) or (not element1.text==element2.text==element3.text==element4.text):
                                     print("-"*15+"flakiness detail"+"-"*15)
                                     print(test_class+" "+test_method+" before assertion "+str(state_index))
-                                    print(element1.tag+ " "+element1.text)
-                                    print(element2.tag+ " "+element2.text)
-                                    print(element3.tag+ " "+element3.text)
-                                    print(element4.tag+ " "+element4.text)
+                                    print(element1.tag)
+#                                     print(element1.tag+ " "+element1.text)
+#                                     print(element2.tag+ " "+element2.text)
+#                                     print(element3.tag+ " "+element3.text)
+#                                     print(element4.tag+ " "+element4.text)
                                     if state_index not in comparison_info[test_class+" "+test_method+" "+str(i)]:
                                         comparison_info[test_class+" "+test_method+" "+str(i)][state_index]=set()
                                     comparison_info[test_class+" "+test_method+" "+str(i)][state_index].add(element1.tag)

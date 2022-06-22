@@ -519,7 +519,7 @@ for mutation in mutated_info:
                         for e_index in range(len(normal_all_elements)):
                             element1 = mutated_all_elements[e_index]
                             element2 = normal_all_elements[e_index]
-                            if element1.tag in tag_bl or element2.tag in tag_bl:
+                            if element1.tag in tag_bl or element2.tag in tag_bl or "Mockito" in str(element1.tag) or "Mockito" in str(element2.tag):
                                 pass
                             elif (not element1.tag==element2.tag) or (not element1.text==element2.text):
                                 diff_list[j]=True
@@ -632,7 +632,7 @@ for mutation in mutated_info:
                                 for e_index in range(len(normal_all_elements)):
                                     element1 = mutated_all_elements[e_index]
                                     element2 = normal_all_elements[e_index]
-                                    if element1.tag in tag_bl or element2.tag in tag_bl:
+                                    if element1.tag in tag_bl or element2.tag in tag_bl or "Mockito" in element1.tag or "Mockito" in element2.tag:
                                         pass
                                     elif (not element1.tag==element2.tag) or (not element1.text==element2.text):
                                         test_case_diff+=1
