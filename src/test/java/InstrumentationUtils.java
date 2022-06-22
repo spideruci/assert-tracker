@@ -82,7 +82,7 @@ public class InstrumentationUtils {
     }
 
     public static void printString(String content){
-        System.err.println(content+System.nanoTime());
+        System.err.println(content+ System.nanoTime());
     }
 
     public static void dumpAssertionCount(Integer value){
