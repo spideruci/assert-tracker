@@ -13,7 +13,7 @@ if __name__ == "__main__":
     count=0
     reportLines =[]
 #     file_name = sys.argv[1]
-    file_name = "2-assertion_scan/target/assertions.txt"
+    file_name = "2-assertion-scan/target/assertions.txt"
     with open(file_name,'r') as f:
         Lines = f.readlines();
     prev_state = "start"
