@@ -47,6 +47,7 @@ public class AssertVisitor extends MethodVisitor {
                          ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo, boolean isTestClass,
                          String testClassName, Boolean isJunitTestcase) {
         super(api, methodWriter);
+//        System.out.println(name+" "+descriptor+" "+"hahahahahah");
 //        super(api, methodWriter, access, name, descriptor);
         this.methodName = name;
         this.isTestAnnotationPresent= false;
@@ -127,7 +128,7 @@ public class AssertVisitor extends MethodVisitor {
                 //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                         "printString", "(Ljava/lang/String;)V", false);
-            }else if(this.initPresent && isTestClass){
+            }else if(this.initPresent && isTestClass && !testClassName.endsWith("JexlTestCase")){
                 String content = "Enter Junit4 Constructor ";
                 this.mv.visitLdcInsn(content);
                 //invoke InstrumentationUtils.printString(content)
@@ -156,6 +157,12 @@ public class AssertVisitor extends MethodVisitor {
                 //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                         "printString", "(Ljava/lang/String;)V", false);
+            }else if(isTestClass && methodName.equals("<clinit>")){
+                String content = "Enter Static Constructor ";
+                this.mv.visitLdcInsn(content);
+                //invoke InstrumentationUtils.printString(content)
+                this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                        "printString", "(Ljava/lang/String;)V", false);
             }
         }
 
@@ -168,7 +175,7 @@ public class AssertVisitor extends MethodVisitor {
         if(!methodName.equals("access$000") &&
                 ( isJunitTestcase||isTestAnnotationPresent || isBeforeEachPresent ||
                 isBeforeAllPresent || isAfterEachPresent || isAfterAllPresent ||
-                (initPresent&& isTestClass) || beforePresent||afterPresent)){
+                (initPresent&& isTestClass) || beforePresent||afterPresent||(isTestClass && methodName.equals("<clinit>")))){
             switch (opcode) {
                 case Opcodes.IRETURN:
                 case Opcodes.FRETURN:
@@ -188,7 +195,7 @@ public class AssertVisitor extends MethodVisitor {
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
-                    }else if(initPresent && isTestClass) {
+                    }else if(initPresent && isTestClass && !testClassName.endsWith("JexlTestCase")) {
                         this.mv.visitLdcInsn("exit Constructor Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
@@ -224,6 +231,11 @@ public class AssertVisitor extends MethodVisitor {
                                 "printString", "(Ljava/lang/String;)V", false);
                     }else if(isAfterAllPresent){
                         this.mv.visitLdcInsn("exit AfterAll Method ");
+                        //invoke InstrumentationUtils.printString(content)
+                        this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
+                                "printString", "(Ljava/lang/String;)V", false);
+                    }else if(isTestClass && methodName.equals("<clinit>")){
+                        this.mv.visitLdcInsn("exit Static Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
