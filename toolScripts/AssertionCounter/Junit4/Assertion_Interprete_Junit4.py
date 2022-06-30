@@ -21,7 +21,7 @@ if __name__ == "__main__":
         text = Lines[2*i+1]
         if text.startswith("<init>"):
             action = "init"
-            init_queue.append(num)
+            # init_queue.append(num)
         elif text.startswith("tearDown"):
             action = "tearDown"
         elif text.startswith("setUp"):
@@ -36,33 +36,36 @@ if __name__ == "__main__":
             test_case_count=test_case_count+1
             cur_testcase = text
             action = "testcase"
+
         cur_state = action
+        if(cur_state=="testcase"):
+            reportLines.append(str(counter) + " " + cur_testcase)
+        # if((prev_state =="testcase" or prev_state == "tearDown")and (cur_state =="init" or cur_state =="setUp")):
+        #     # init_count = init_queue.pop(0)
+        #     #
+        #     # reportLines.append(str(counter+init_count)+" "+cur_testcase)
+        #
+        #     counter = 0
+        #
+        # if(cur_state=="Constructor" and prev_state!="start"):
+        #     reportLines.append(str(counter)+" "+cur_testcase)
+        #
+        # if(prev_state=="testcase" and cur_state=="testcase"):
+        #     reportLines.append(str(counter)+" "+pre_testcase)
+        #     counter=0
+        #
+        # if(action!="init"):
+        #     counter = counter+num
+        #
+        # if(action=="testcase"):
+        #     pre_testcase=cur_testcase
+        # prev_state = cur_state
 
-        if((prev_state =="testcase" or prev_state == "tearDown")and (cur_state =="init" or cur_state =="setUp")):
-            init_count = init_queue.pop(0)
-
-            reportLines.append(str(counter+init_count)+" "+cur_testcase)
-            counter = 0
-
-        if(cur_state=="Constructor" and prev_state!="start"):
-            reportLines.append(str(counter)+" "+cur_testcase)
-
-        if(prev_state=="testcase" and cur_state=="testcase"):
-            reportLines.append(str(counter)+" "+pre_testcase)
-            counter=0
-
-        if(action!="init"):
-            counter = counter+num
-
-        if(action=="testcase"):
-            pre_testcase=cur_testcase
-        prev_state = cur_state
-
-    if len(init_queue)!=0:
-        init_count = init_queue.pop(0)
-        reportLines.append(str(counter+init_count)+" "+cur_testcase)
-    else:
-        reportLines.append(str(counter)+" "+cur_testcase)
+    # if len(init_queue)!=0:
+    #     init_count = init_queue.pop(0)
+    #     reportLines.append(str(counter+init_count)+" "+cur_testcase)
+    # else:
+    #     reportLines.append(str(counter)+" "+cur_testcase)
 
     a_dict ={}
 
