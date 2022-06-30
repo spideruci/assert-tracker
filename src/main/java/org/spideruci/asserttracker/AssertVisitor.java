@@ -23,8 +23,8 @@ public class AssertVisitor extends MethodVisitor {
     boolean isBeforeEachPresent;
     boolean isAfterEachPresent;
 
-    boolean isBeforeAllPresent;
-    boolean isAfterAllPresent;
+    boolean isBeforeClassPresent;
+    boolean isAfterClassPresent;
     String testClassName;
     boolean isDisabled;
     ArrayList<ArrayList<LocalVariable>> methodLocalVariableInfo;
@@ -116,14 +116,14 @@ public class AssertVisitor extends MethodVisitor {
                 //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                         "printString", "(Ljava/lang/String;)V", false);
-            }else if (this.isBeforeAllPresent){
-                String content = "enter BeforeAll method ";
+            }else if (this.isBeforeClassPresent){
+                String content = "enter BeforeClass method ";
                 this.mv.visitLdcInsn(content);
                 //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                         "printString", "(Ljava/lang/String;)V", false);
-            }else if (this.isAfterAllPresent){
-                String content = "enter AfterAll method ";
+            }else if (this.isAfterClassPresent){
+                String content = "enter AfterClass method ";
                 this.mv.visitLdcInsn(content);
                 //invoke InstrumentationUtils.printString(content)
                 this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
@@ -174,7 +174,7 @@ public class AssertVisitor extends MethodVisitor {
     public void visitInsn(int opcode) {
         if(!methodName.equals("access$000") &&
                 ( isJunitTestcase||isTestAnnotationPresent || isBeforeEachPresent ||
-                isBeforeAllPresent || isAfterEachPresent || isAfterAllPresent ||
+                isBeforeClassPresent || isAfterEachPresent || isAfterClassPresent ||
                 (initPresent&& isTestClass) || beforePresent||afterPresent||(isTestClass && methodName.equals("<clinit>")))){
             switch (opcode) {
                 case Opcodes.IRETURN:
@@ -224,13 +224,13 @@ public class AssertVisitor extends MethodVisitor {
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
-                    }else if(isBeforeAllPresent){
-                        this.mv.visitLdcInsn("exit BeforeAll Method ");
+                    }else if(isBeforeClassPresent){
+                        this.mv.visitLdcInsn("exit BeforeClass Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
-                    }else if(isAfterAllPresent){
-                        this.mv.visitLdcInsn("exit AfterAll Method ");
+                    }else if(isAfterClassPresent){
+                        this.mv.visitLdcInsn("exit AfterClass Method ");
                         //invoke InstrumentationUtils.printString(content)
                         this.mv.visitMethodInsn(Opcodes.INVOKESTATIC, "InstrumentationUtils",
                                 "printString", "(Ljava/lang/String;)V", false);
@@ -294,11 +294,11 @@ public class AssertVisitor extends MethodVisitor {
         if(desc.endsWith("Test;")){
             isTestAnnotationPresent = true;
         }
-        if(desc.endsWith("BeforeAll;")){
-            isBeforeAllPresent = true;
+        if(desc.endsWith("BeforeClass;")){
+            isBeforeClassPresent = true;
         }
-        if(desc.endsWith("AfterAll;")){
-            isAfterAllPresent = true;
+        if(desc.endsWith("AfterClass;")){
+            isAfterClassPresent = true;
         }
         if(desc.endsWith("Disabled;")){
             //System.out.println("detect @Disabled");
