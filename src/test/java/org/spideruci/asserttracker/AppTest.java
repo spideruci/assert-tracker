@@ -158,6 +158,83 @@ public class AppTest
     }
 
     @Test
+    public void testNoTryCatch(){
+        Person person1 = new Person(2,false);
+        
+            Person person = new Person(1,true);
+            assertTrue(true);
+        
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        
+        assertTrue(true);
+    }
+
+    @Test
+    public void testNoTryCatchEarlyReturn(){
+        Person person1 = new Person(2,false);
+
+        if (person1.age > 2) { return; }
+        
+            Person person = new Person(1,true);
+            assertTrue(true);
+        
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        
+        assertTrue(true);
+    }
+
+    @Test
+    public void testOuterTryCatch(){
+        try {
+        Person person1 = new Person(2,false);
+        
+            Person person = new Person(1,true);
+            assertTrue(true);
+        
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        
+        assertTrue(true);
+        } catch(Throwable t) { throw t; }
+    }
+
+    @Test
+    public void testOuterTryCatchEarlyReturn(){
+        try {
+
+        Person person1 = new Person(2,false);
+        
+        if (person1.age > 2) { return; }
+
+            Person person = new Person(1,true);
+            assertTrue(true);
+        
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        
+        assertTrue(true);
+        } catch(Throwable t) { throw t; } 
+    }
+
+    public void testNestedOuterTryCatch(){
+        try {
+        try {
+        Person person1 = new Person(2,false);
+        
+            Person person = new Person(1,true);
+            assertTrue(true);
+        
+            Person person2 = new Person(3,true);
+            assertTrue(true);
+        
+        assertTrue(true);
+        } catch(Throwable t) { throw t; }
+        } catch(Throwable t) { throw t; }
+    }
+
+    @Test
     public void testLong(){
         //this: ALOAD 0
         for (int i = 0; i < 3; i++) {//25000

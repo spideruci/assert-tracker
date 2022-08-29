@@ -1,3 +1,5 @@
+package org.spideruci.asserttracker;
+
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.reflection.FieldDictionary;
 import com.thoughtworks.xstream.converters.reflection.SunUnsafeReflectionProvider;

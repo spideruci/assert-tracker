@@ -88,17 +88,27 @@ public class AssertTracker
             for (Path classFile : classFiles) {
                 System.out.println("## " + classFile.toAbsolutePath().getFileName());
 
-                AssertTracker tracker = new AssertTracker(classFile.toFile());
+                File klassFile = classFile.toFile();
 
-                HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo = tracker.traceLocalVariables();
-                tracker.instrumentCode(localVariableInfo);
+                // AssertTracker tracker = new AssertTracker(file);
+
+                // changing this temporarily to run the exception tracker.
+                // tracker.traceExceptions();
+
+                new AssertTracker(klassFile).instrumentForExceptionTracers(0);
+                new AssertTracker(klassFile).instrumentForExceptionTracers(1);
+
+                // HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo = tracker.traceLocalVariables();
+                // tracker.instrumentCode(localVariableInfo);
             }
 //            zfm.closeZipFile();
 
         } else if (file.isFile()) {
             System.out.println(MessageFormat.format("File: {0}", args[0]));
             HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo = new AssertTracker(file).traceLocalVariables();
-            new AssertTracker(file).instrumentCode(localVariableInfo);
+            // new AssertTracker(file).instrumentCode(localVariableInfo);
+            new AssertTracker(file).instrumentForExceptionTracers(0);
+            new AssertTracker(file).instrumentForExceptionTracers(1);
         }
 
     }
@@ -164,18 +174,23 @@ public class AssertTracker
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);//COMPUTE_MAXS
         classReader.accept(new AssertTrackingClassVisitor(Opcodes.ASM9, writer,localVariableInfo), ClassReader.EXPAND_FRAMES);
                 return writer.toByteArray();
-                }
+    }
 
-public void instrumentCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) throws IOException {
+    public void instrumentCode(HashMap<String, ArrayList<ArrayList<LocalVariable>>> localVariableInfo) throws IOException {
         byte[] code = fetchIntrumentedCode(localVariableInfo);
         replaceOriginalCode(code);
-        }
+    }
 
-public void replaceOriginalCode(byte[] code) throws IOException {
+    public void replaceOriginalCode(byte[] code) throws IOException {
         PrintStream byteStream = new PrintStream(this.classFile.getAbsolutePath());
         byteStream.write(code);
         byteStream.close();
-        }
+    }
 
-        }
+    public void instrumentForExceptionTracers(int pass) throws IOException {
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);//COMPUTE_MAXS
+        classReader.accept(new ExceptionTrackingClassVisitor(Opcodes.ASM9, writer, pass), ClassReader.EXPAND_FRAMES);
+        replaceOriginalCode(writer.toByteArray());
+    }
+}
 
